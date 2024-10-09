@@ -12,32 +12,6 @@ from structlog import get_logger
 
 logger = get_logger()
 
-# %%
-data_address = Path("/home/shared/00_data/MAD_4/")
-
-mesh_settings = {
-    "seed_num_base_epi": 100,
-    "seed_num_base_endo": 100,
-    "num_z_sections_epi": 50,
-    "num_z_sections_endo": 50,
-    "num_mid_layers_base": 7,
-    "smooth_level_epi": 0.1,
-    "smooth_level_endo": 0.1,
-    "num_lax_points": 64,
-    "lax_smooth_level_epi": 20,
-    "lax_smooth_level_endo": 20,
-    "z_sections_flag_epi": 0,
-    "z_sections_flag_endo": 0,
-    "seed_num_threshold_epi": 25,
-    "seed_num_threshold_endo": 20,
-    "scale_for_delauny": 1.5,
-    "t_mesh": -1,
-    "MeshSizeMin": 0.5,
-    "MeshSizeMax": 1,
-    "SurfaceMeshSizeEndo": 2,
-    "SurfaceMeshSizeEpi": 2,
-}
-
 
 # %%
 def read_data_h5(file_dir):
@@ -71,12 +45,12 @@ def located_h5(data_address):
 
 
 # %%
-def create_mesh(mesh_settings, data_dir, results_folder="00_results"):
-    results_folder = Path((data_address / "00_results"))
-    results_folder.mkdir(exist_ok=True, parents=True)
+def create_mesh(mesh_settings, sample_directory, output_folder):
+    output_folder = Path((sample_directory / "00_results"))
+    output_folder.mkdir(exist_ok=True, parents=True)
 
-    h5_file = located_h5(data_dir)
-    LVmask_raw, slice_thickness, resolution = read_data_h5(h5_file.as_posix())
+    h5_file_address = located_h5(sample_directory)
+    LVmask_raw, slice_thickness, resolution = read_data_h5(h5_file_address.as_posix())
     LVmask = close_apex(LVmask_raw)
     logger.info("Mask is loaded and apex is closed")
 
@@ -95,7 +69,7 @@ def create_mesh(mesh_settings, data_dir, results_folder="00_results"):
     plot_flag = True
 
     if plot_flag:
-        outdir = results_folder / "02_ShaxBSpline"
+        outdir = output_folder / "02_ShaxBSpline"
         outdir.mkdir(exist_ok=True)
         K_endo = len(tck_endo)
         for k in range(K):
@@ -126,7 +100,7 @@ def create_mesh(mesh_settings, data_dir, results_folder="00_results"):
         LAX_points_endo, mesh_settings["lax_smooth_level_endo"]
     )
     if plot_flag:
-        outdir = results_folder / "03_LaxBSpline"
+        outdir = output_folder / "03_LaxBSpline"
         outdir.mkdir(exist_ok=True)
         fig = go.Figure()
         utils.plotly_3d_LAX(
@@ -151,7 +125,7 @@ def create_mesh(mesh_settings, data_dir, results_folder="00_results"):
         mesh_settings["z_sections_flag_endo"],
     )
     if plot_flag:
-        outdir = results_folder / "04_Contours"
+        outdir = output_folder / "04_Contours"
         outdir.mkdir(exist_ok=True)
         fig = go.Figure()
         fig = mu.plotly_3d_contours(
@@ -172,7 +146,7 @@ def create_mesh(mesh_settings, data_dir, results_folder="00_results"):
         seed_num_threshold=mesh_settings["seed_num_threshold_endo"],
     )
     if plot_flag:
-        outdir = results_folder / "05_Point Cloud"
+        outdir = output_folder / "05_Point Cloud"
         outdir.mkdir(exist_ok=True)
         fig = go.Figure()
         for points in points_cloud_epi:
@@ -184,7 +158,7 @@ def create_mesh(mesh_settings, data_dir, results_folder="00_results"):
             mu.plot_3d_points_on_figure(points, fig=fig)
         fnmae = outdir.as_posix() + "/Points_cloud_endo.html"
         fig.write_html(fnmae)
-    mesh_dir = results_folder / "06_Mesh"
+    mesh_dir = output_folder / "06_Mesh"
     mesh_dir.mkdir(exist_ok=True, parents=True)
     LVmesh = mu.VentricMesh_poisson(
         points_cloud_epi,
