@@ -15,7 +15,9 @@ from structlog import get_logger
 logger = get_logger()
 
 # %%
-data_address = '/home/shared/data.h5'
+data_address = Path('/home/shared/00_data/MAD_4/')
+results_folder = Path((data_address / '00_results'))
+results_folder.mkdir(exist_ok=True, parents=True)
 mesh_settings = {
    "seed_num_base_epi": 100,
     "seed_num_base_endo": 100,
@@ -59,10 +61,20 @@ def close_apex(LVmask):
     mask_closed_apex[-1,:,:] = mask_last_slice_closed
     return mask_closed_apex
 
+def located_h5(data_address):
+    h5_files = list(data_address.glob("*.h5"))
+    if len(h5_files) != 1:
+        logger.error("Data folder must contain exactly 1 .mat file.")
+        return
+    h5_file = h5_files[0]
+    logger.info(f"{h5_file.name} is loading.")
+    return h5_file
 
 #%%
-LVmask_raw, slice_thickness, resolution = read_data_h5(data_address)
+h5_file = located_h5(data_address)
+LVmask_raw, slice_thickness, resolution = read_data_h5(h5_file.as_posix())
 LVmask = close_apex(LVmask_raw)
+logger.info("Mask is loaded and apex is closed")
 #%%
 mask_epi, mask_endo = mu.get_endo_epi(LVmask)
 
@@ -79,8 +91,7 @@ tck_endo = mu.get_shax_from_coords(
 K = len(tck_epi)
 #%%
 plot_flag = True
-results_folder = Path('results')
-results_folder.mkdir(exist_ok=True, parents=True)
+
 if plot_flag:
     outdir = results_folder / "02_ShaxBSpline"
     outdir.mkdir(exist_ok=True)
