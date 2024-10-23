@@ -47,7 +47,7 @@ def located_h5(data_address):
 
 
 # %%
-def create_mesh(mesh_settings, sample_directory, output_folder):
+def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True):
     output_folder = Path((sample_directory / "00_results"))
     output_folder.mkdir(exist_ok=True, parents=True)
 
@@ -58,7 +58,23 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
     logger.info("Mask is loaded and apex is closed")
 
     mask_epi, mask_endo = mu.get_endo_epi(LVmask)
-
+    
+    if plot_flag:
+        outdir = output_folder / "01_Masks"
+        outdir.mkdir(exist_ok=True)
+        K = len(mask_epi)
+        K_endo = len(mask_endo)
+        for k in range(K):
+            mask_epi_k = mask_epi[k]
+            mask_endo_k = mask_endo[k]
+            LVmask_k = LVmask[k]
+            new_image = utils.image_overlay(LVmask_k, mask_epi_k, mask_endo_k)
+            fnmae = outdir.as_posix() + "/" + str(k) + ".png"
+            plt.imshow(new_image)
+            dpi = np.round((300/resolution)/100)*100
+            plt.savefig(fnmae, dpi=dpi)
+            plt.close()
+    
     coords_epi = mu.get_coords_from_mask(mask_epi, resolution, slice_thickness)
     coords_endo = mu.get_coords_from_mask(mask_endo, resolution, slice_thickness)
 
@@ -69,7 +85,6 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         coords_endo, mesh_settings["smooth_level_endo"]
     )
     K = len(tck_epi)
-    plot_flag = True
 
     if plot_flag:
         outdir = output_folder / "02_ShaxBSpline"
