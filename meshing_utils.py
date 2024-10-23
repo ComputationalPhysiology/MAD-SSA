@@ -28,8 +28,10 @@ def close_apex(LVmask):
     mask_closed_apex[:-1, :, :] = LVmask
     kernel = np.ones((3, 3), np.uint8)
     mask_last_slice = np.uint8(LVmask[-1, :, :] * 255)
-    mask_last_slice_closed = cv.dilate(mask_last_slice, kernel, iterations=6)
-    mask_last_slice_closed = cv.erode(mask_last_slice_closed, kernel, iterations=8)
+    mask_last_slice_closed = cv.dilate(mask_last_slice, kernel, iterations=20)
+    mask_last_slice_closed = cv.erode(mask_last_slice_closed, kernel, iterations=25)
+    plt.imshow(mask_last_slice_closed)
+    plt.savefig('test.png')
     mask_closed_apex[-1, :, :] = mask_last_slice_closed
     return mask_closed_apex
 
@@ -56,14 +58,14 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
 
     mask_epi, mask_endo = mu.get_endo_epi(LVmask)
 
-    coords_epi = mu.get_coords_from_mask(mask_epi, resolution)
-    coords_endo = mu.get_coords_from_mask(mask_endo, resolution)
+    coords_epi = mu.get_coords_from_mask(mask_epi, resolution, slice_thickness)
+    coords_endo = mu.get_coords_from_mask(mask_endo, resolution, slice_thickness)
 
     tck_epi = mu.get_shax_from_coords(
-        coords_epi, resolution, slice_thickness, mesh_settings["smooth_level_epi"]
+        coords_epi, mesh_settings["smooth_level_epi"]
     )
     tck_endo = mu.get_shax_from_coords(
-        coords_endo, resolution, slice_thickness, mesh_settings["smooth_level_endo"]
+        coords_endo, mesh_settings["smooth_level_endo"]
     )
     K = len(tck_epi)
     plot_flag = True
@@ -94,10 +96,10 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         sample_points_endo, apex_threshold, slice_thickness
     )
     tck_lax_epi = mu.get_lax_from_laxpoints(
-        LAX_points_epi, mesh_settings["lax_smooth_level_epi"]
+        LAX_points_epi, mesh_settings["lax_smooth_level_epi"], mesh_settings["lax_spline_order_epi"]
     )
     tck_lax_endo = mu.get_lax_from_laxpoints(
-        LAX_points_endo, mesh_settings["lax_smooth_level_endo"]
+        LAX_points_endo, mesh_settings["lax_smooth_level_endo"], mesh_settings["lax_spline_order_endo"]
     )
     if plot_flag:
         outdir = output_folder / "03_LaxBSpline"
@@ -160,7 +162,7 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         fig.write_html(fnmae)
     mesh_dir = output_folder / "06_Mesh"
     mesh_dir.mkdir(exist_ok=True, parents=True)
-    LVmesh = mu.VentricMesh_poisson(
+    LVmesh, mesh_epi, mesh_endo, mesh_base = mu.VentricMesh_poisson(
         points_cloud_epi,
         points_cloud_endo,
         mesh_settings["num_mid_layers_base"],
@@ -172,5 +174,45 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         filename_suffix="",
         result_folder=mesh_dir.as_posix() + "/",
     )
-    utils.check_mesh_quality(LVmesh, file_path=outdir.as_posix() + "/Mesh_report.txt")
+    # utils.check_mesh_quality(LVmesh, file_path=outdir.as_posix() + "/Mesh_report.txt")
+    if plot_flag:
+        fig = utils.plot_coords_and_mesh(coords_epi, coords_endo, mesh_epi, mesh_endo)
+        fname = mesh_dir.as_posix() + "/Mesh_vs_Coords.html"
+        fig.write_html(fname)
+        
+    
+    errors_epi = utils.calculate_error_between_coords_and_mesh(coords_epi, mesh_epi)
+    errors_endo = utils.calculate_error_between_coords_and_mesh(coords_endo, mesh_endo)
+    
+    all_errors = np.concatenate([errors_epi, errors_endo])
+    xlim = (np.min(all_errors), np.max(all_errors))
+    hist_epi, _ = np.histogram(errors_epi, bins=30)
+    hist_endo, _ = np.histogram(errors_endo, bins=30)
+    max_y = max(np.max(hist_epi), np.max(hist_endo))
+    ylim = (0, max_y + max_y * 0.1)  # Add 10% padding for aesthetics
+
+    fname_epi = mesh_dir / "Epi_mesh_errors.png"
+    fname_endo = mesh_dir / "Endo_mesh_errors.png"
+
+    utils.plot_error_histogram(
+        errors=errors_epi,
+        fname=fname_epi,
+        color='red',
+        xlim=xlim,
+        ylim=ylim,
+        title_prefix='Epi'
+    )
+
+    utils.plot_error_histogram(
+        errors=errors_endo,
+        fname=fname_endo,
+        color='blue',
+        xlim=xlim,
+        ylim=ylim,
+        title_prefix='Endo'
+    )
+    fname_epi = fname_epi.as_posix()[:-4] + ".txt"
+    utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium")
+    fname_endo = fname_endo.as_posix()[:-4] + ".txt"
+    utils.save_error_distribution_report(errors_endo, fname_endo, n_bins=10,  surface_name="Endocardium")
     return LVmesh
