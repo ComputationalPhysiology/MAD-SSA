@@ -151,13 +151,13 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         )
         fnmae = outdir.as_posix() + "/Contour.html"
         fig.write_html(fnmae)
-    points_cloud_epi, k_apex_epi = mu.create_point_cloud(
+    points_cloud_epi, k_apex_epi, normals_epi  = mu.create_point_cloud(
         tck_shax_epi,
         apex_epi,
         mesh_settings["seed_num_base_epi"],
         seed_num_threshold=mesh_settings["seed_num_threshold_epi"],
     )
-    points_cloud_endo, k_apex_endo = mu.create_point_cloud(
+    points_cloud_endo, k_apex_endo, normals_endo = mu.create_point_cloud(
         tck_shax_endo,
         apex_endo,
         mesh_settings["seed_num_base_endo"],
@@ -184,13 +184,14 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         mesh_settings["num_mid_layers_base"],
         SurfaceMeshSizeEpi=mesh_settings["SurfaceMeshSizeEpi"],
         SurfaceMeshSizeEndo=mesh_settings["SurfaceMeshSizeEndo"],
+        normals_epi = normals_epi,
+        normals_endo = normals_endo,
         save_flag=True,
         filename_suffix="",
         result_folder=mesh_dir.as_posix() + "/",
     )
     output_mesh_filename = mesh_dir / 'Mesh_3D.msh'
-    # mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=mesh_settings["MeshSizeMin"], MeshSizeMax=mesh_settings["MeshSizeMax"])
-    # utils.check_mesh_quality(LVmesh, file_path=outdir.as_posix() + "/Mesh_report.txt")
+    mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=mesh_settings["MeshSizeMin"], MeshSizeMax=mesh_settings["MeshSizeMax"])
     if plot_flag:
         fig = utils.plot_coords_and_mesh(coords_epi, coords_endo, mesh_epi_filename, mesh_endo_filename)
         fname = mesh_dir.as_posix() + "/Mesh_vs_Coords.html"
