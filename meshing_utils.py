@@ -205,15 +205,6 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         resolution=resolution
     )
 
-    # utils.plot_error_histogram(
-    #     errors=errors_endo,
-    #     fname=fname_endo,
-    #     color='blue',
-    #     xlim=xlim,
-    #     ylim=ylim,
-    #     title_prefix='Endo', 
-    #     resolution=resolution
-    # )
     utils.plot_error_histogram(
         errors=errors_endo,
         fname=fname_endo,
@@ -221,6 +212,7 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         xlim=xlim,
         ylim=ylim,
         title_prefix='Endo', 
+        resolution=resolution
     )
     fname_epi = fname_epi.as_posix()[:-4] + ".txt"
     utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium", resolution=resolution)
