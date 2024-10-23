@@ -53,6 +53,7 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
 
     h5_file_address = located_h5(sample_directory)
     LVmask_raw, slice_thickness, resolution = read_data_h5(h5_file_address.as_posix())
+    logger.info(f"Reading mask with slice thickness of {slice_thickness}mm and resolution of {resolution}mm")
     LVmask = close_apex(LVmask_raw)
     logger.info("Mask is loaded and apex is closed")
 
@@ -162,27 +163,27 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         fig.write_html(fnmae)
     mesh_dir = output_folder / "06_Mesh"
     mesh_dir.mkdir(exist_ok=True, parents=True)
-    LVmesh, mesh_epi, mesh_endo, mesh_base = mu.VentricMesh_poisson(
+    mesh_epi_filename, mesh_endo_filename, mesh_base_filename = mu.VentricMesh_poisson(
         points_cloud_epi,
         points_cloud_endo,
         mesh_settings["num_mid_layers_base"],
         SurfaceMeshSizeEpi=mesh_settings["SurfaceMeshSizeEpi"],
         SurfaceMeshSizeEndo=mesh_settings["SurfaceMeshSizeEndo"],
-        MeshSizeMax=mesh_settings["MeshSizeMax"],
-        MeshSizeMin=mesh_settings["MeshSizeMin"],
         save_flag=True,
         filename_suffix="",
         result_folder=mesh_dir.as_posix() + "/",
     )
+    output_mesh_filename = mesh_dir / 'Mesh_3D.msh'
+    # mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=mesh_settings["MeshSizeMin"], MeshSizeMax=mesh_settings["MeshSizeMax"])
     # utils.check_mesh_quality(LVmesh, file_path=outdir.as_posix() + "/Mesh_report.txt")
     if plot_flag:
-        fig = utils.plot_coords_and_mesh(coords_epi, coords_endo, mesh_epi, mesh_endo)
+        fig = utils.plot_coords_and_mesh(coords_epi, coords_endo, mesh_epi_filename, mesh_endo_filename)
         fname = mesh_dir.as_posix() + "/Mesh_vs_Coords.html"
         fig.write_html(fname)
         
     
-    errors_epi = utils.calculate_error_between_coords_and_mesh(coords_epi, mesh_epi)
-    errors_endo = utils.calculate_error_between_coords_and_mesh(coords_endo, mesh_endo)
+    errors_epi = utils.calculate_error_between_coords_and_mesh(coords_epi, mesh_epi_filename)
+    errors_endo = utils.calculate_error_between_coords_and_mesh(coords_endo, mesh_endo_filename)
     
     all_errors = np.concatenate([errors_epi, errors_endo])
     xlim = (np.min(all_errors), np.max(all_errors))
@@ -200,19 +201,29 @@ def create_mesh(mesh_settings, sample_directory, output_folder):
         color='red',
         xlim=xlim,
         ylim=ylim,
-        title_prefix='Epi'
+        title_prefix='Epi', 
+        resolution=resolution
     )
 
+    # utils.plot_error_histogram(
+    #     errors=errors_endo,
+    #     fname=fname_endo,
+    #     color='blue',
+    #     xlim=xlim,
+    #     ylim=ylim,
+    #     title_prefix='Endo', 
+    #     resolution=resolution
+    # )
     utils.plot_error_histogram(
         errors=errors_endo,
         fname=fname_endo,
         color='blue',
         xlim=xlim,
         ylim=ylim,
-        title_prefix='Endo'
+        title_prefix='Endo', 
     )
     fname_epi = fname_epi.as_posix()[:-4] + ".txt"
-    utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium")
+    utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium", resolution=resolution)
     fname_endo = fname_endo.as_posix()[:-4] + ".txt"
-    utils.save_error_distribution_report(errors_endo, fname_endo, n_bins=10,  surface_name="Endocardium")
-    return LVmesh
+    utils.save_error_distribution_report(errors_endo, fname_endo, n_bins=10,  surface_name="Endocardium", resolution=resolution)
+    return output_mesh_filename
