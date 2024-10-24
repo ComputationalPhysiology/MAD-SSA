@@ -15,7 +15,7 @@
             "lax_spline_order_endo": 2,
             "z_sections_flag_epi": 0,
             "z_sections_flag_endo": 0,
-            "seed_num_threshold_epi": 25,
+            "seed_num_threshold_epi": 30,
             "seed_num_threshold_endo": 30,
             "scale_for_delauny": 1.5,
             "t_mesh": -1,
