@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import plotly.graph_objects as go
 import cv2 as cv
+from tqdm import tqdm
 
 import ventric_mesh.mesh_utils as mu
 import ventric_mesh.utils as utils
@@ -168,19 +169,50 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
     
     points_cloud_epi_unique = points_cloud_epi[:k_apex_epi]
     points_cloud_endo_unique = points_cloud_endo[:k_apex_endo]
-  
+    
+    updated_apex_epi = apex_epi
+    updated_apex_epi[2] = points_cloud_epi_unique[-1][0,2]
+    updated_tck_shax_epi = mu.get_shax_from_lax(
+        tck_lax_epi,
+        updated_apex_epi,
+        mesh_settings["num_z_sections_epi"],
+        mesh_settings["z_sections_flag_epi"],
+    )
+    
+    updated_apex_endo = apex_endo
+    updated_apex_endo[2] = points_cloud_endo_unique[-1][0,2]
+    updated_tck_shax_endo = mu.get_shax_from_lax(
+        tck_lax_endo,
+        updated_apex_endo,
+        mesh_settings["num_z_sections_endo"],
+        mesh_settings["z_sections_flag_endo"],
+    )
+    
+    updated_points_cloud_epi = []
+    K = len(updated_tck_shax_epi)
+    for k in tqdm(range(K), desc="Creating final unique point cloud ", ncols=100):
+        tck_k = updated_tck_shax_epi[k]
+        points = mu.equally_spaced_points_on_spline(tck_k, mesh_settings["seed_num_base_epi"])
+        updated_points_cloud_epi.append(points)
+
+    updated_points_cloud_endo = []
+    K = len(updated_tck_shax_endo)
+    for k in tqdm(range(K), desc="Creating final unique point cloud", ncols=100):
+        tck_k = updated_tck_shax_endo[k]
+        points = mu.equally_spaced_points_on_spline(tck_k, mesh_settings["seed_num_base_epi"])
+        updated_points_cloud_endo.append(points)
+
     if plot_flag:
         outdir = output_folder / "05_Point Cloud"
         outdir.mkdir(exist_ok=True)
         fig = go.Figure()
-        for points in points_cloud_epi_unique:
+        for points in updated_points_cloud_epi:
             mu.plot_3d_points_on_figure(points, fig=fig)
         fnmae = outdir.as_posix() + "/Points_cloud_epi.html"
         fig.write_html(fnmae)
         fig = go.Figure()
-        for points in points_cloud_endo_unique:
+        for points in updated_points_cloud_endo:
             mu.plot_3d_points_on_figure(points, fig=fig)
         fnmae = outdir.as_posix() + "/Points_cloud_endo.html"
         fig.write_html(fnmae)
-    
     return points_cloud_epi_unique, points_cloud_endo_unique
