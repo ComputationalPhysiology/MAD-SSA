@@ -70,7 +70,7 @@ def main(args=None) -> int:
     mesh_settings = settings["mesh"][mesh_quality]
 
     sample_directory = data_directory / sample_name
-    output_mesh_filename = meshing_utils.create_mesh(mesh_settings, sample_directory, output_folder)
+    points_cloud_epi_unique, points_cloud_endo_unique = meshing_utils.create_mesh(mesh_settings, sample_directory, output_folder)
 
 
 if __name__ == "__main__":
