@@ -1,8 +1,8 @@
 {
     "mesh": {
         "fine": {
-            "seed_num_base_epi": 50,
-            "seed_num_base_endo": 50,
+            "seed_num_base_epi": 40,
+            "seed_num_base_endo": 40,
             "num_z_sections_epi": 20,
             "num_z_sections_endo": 20,
             "num_mid_layers_base": 7,
