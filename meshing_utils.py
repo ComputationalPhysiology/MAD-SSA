@@ -151,18 +151,21 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         )
         fnmae = outdir.as_posix() + "/Contour.html"
         fig.write_html(fnmae)
-    points_cloud_epi, k_apex_epi, normals_epi  = mu.create_point_cloud(
+    points_cloud_epi, k_apex_epi  = mu.create_point_cloud(
         tck_shax_epi,
         apex_epi,
         mesh_settings["seed_num_base_epi"],
         seed_num_threshold=mesh_settings["seed_num_threshold_epi"],
     )
-    points_cloud_endo, k_apex_endo, normals_endo = mu.create_point_cloud(
+    points_cloud_endo, k_apex_endo = mu.create_point_cloud(
         tck_shax_endo,
         apex_endo,
         mesh_settings["seed_num_base_endo"],
         seed_num_threshold=mesh_settings["seed_num_threshold_endo"],
     )
+    # Calculate normals
+    normals_list_endo = mu.calculate_normals(points_cloud_endo, k_apex_endo)
+    normals_list_epi = mu.calculate_normals(points_cloud_epi, k_apex_epi)
     if plot_flag:
         outdir = output_folder / "05_Point Cloud"
         outdir.mkdir(exist_ok=True)
@@ -184,8 +187,8 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         mesh_settings["num_mid_layers_base"],
         SurfaceMeshSizeEpi=mesh_settings["SurfaceMeshSizeEpi"],
         SurfaceMeshSizeEndo=mesh_settings["SurfaceMeshSizeEndo"],
-        normals_epi = normals_epi,
-        normals_endo = normals_endo,
+        normals_list_epi = normals_list_epi,
+        normals_list_endo = normals_list_endo,
         save_flag=True,
         filename_suffix="",
         result_folder=mesh_dir.as_posix() + "/",
