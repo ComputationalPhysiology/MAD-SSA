@@ -297,6 +297,10 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
             plt.close()
     
     logger.info(f"Epi and Endo coords are extracted from point clouds")
+    
+    slice_thicknesses = [coords_epi[k][0,2]-coords_epi[k+1][0,2] for k in range(len(coords_epi)-1)]
+    slice_thickness_ave = np.mean(slice_thicknesses)
+    
     tck_epi = mu.get_shax_from_coords(
         coords_epi, mesh_settings["smooth_level_epi"]
     )
@@ -324,11 +328,12 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
     )
 
     apex_threshold = mu.get_apex_threshold(sample_points_epi, sample_points_endo)
+    logger.info("Using slice thickness average for lax points")
     LAX_points_epi, apex_epi = mu.create_lax_points(
-        sample_points_epi, apex_threshold, slice_thickness
+        sample_points_epi, apex_threshold, slice_thickness_ave
     )
     LAX_points_endo, apex_endo = mu.create_lax_points(
-        sample_points_endo, apex_threshold, slice_thickness
+        sample_points_endo, apex_threshold, slice_thickness_ave
     )
     tck_lax_epi = mu.get_lax_from_laxpoints(
         LAX_points_epi, mesh_settings["lax_smooth_level_epi"], mesh_settings["lax_spline_order_epi"]
