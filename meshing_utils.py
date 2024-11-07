@@ -5,6 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import cv2 as cv
 from tqdm import tqdm
+import open3d as o3d
 
 import ventric_mesh.mesh_utils as mu
 import ventric_mesh.utils as utils
@@ -12,7 +13,7 @@ import matplotlib.pyplot as plt
 from structlog import get_logger
 
 logger = get_logger()
-
+# res_21 = 
 
 # %%
 def read_data_h5(file_dir):
@@ -46,8 +47,6 @@ def located_h5(data_address):
     logger.info(f"{h5_file.name} is loading.")
     return h5_file
 
-import numpy as np
-import plotly.graph_objects as go
 
 def restructure_coords_into_slices(coords, z_tolerance=0.1):
     """
@@ -112,73 +111,155 @@ def average_z_for_slices(slices):
     
     return adjusted_slices
 
-def plot_3d_points(coords, additional_coords=None):
+def calculate_closest_distances(point_cloud):
     """
-    Plots 3D points given an n by 3 numpy array of coordinates, with an option to plot additional points on the same figure.
+    Calculate the distance to the closest point for each point in a given point cloud.
 
     Parameters:
-    coords (np.ndarray): An n by 3 array where each row represents a 3D coordinate (x, y, z).
-    additional_coords (np.ndarray, optional): An optional n by 3 array of additional coordinates to plot.
+    point_cloud (numpy.ndarray): A numpy array of shape (N, 3) representing the point cloud,
+                                 where N is the number of points.
+
+    Returns:
+    numpy.ndarray: A 1D array of length N containing the distances to the closest point for each point.
     """
-    if not isinstance(coords, np.ndarray) or coords.shape[1] != 3:
-        raise ValueError("Input must be a numpy array with shape (n, 3)")
+    num_points = point_cloud.shape[0]
+    closest_distances = np.full(num_points, np.inf)
 
-    # Extract x, y, z components for original coords
-    x = coords[:, 0]
-    y = coords[:, 1]
-    z = coords[:, 2]
+    for i in range(num_points):
+        # Calculate distances from point i to all other points
+        distances = np.linalg.norm(point_cloud - point_cloud[i], axis=1)
+        distances[i] = np.inf  # Exclude self-distance
+        closest_distances[i] = np.min(distances)
 
-    # Create a 3D scatter plot for original coords
-    fig = go.Figure(data=[go.Scatter3d(
-        x=x, 
-        y=y, 
-        z=z, 
-        mode='markers',
-        marker=dict(
-            size=5,
-            color='blue',
-            opacity=0.8
-        ),
-        name='Original'
-    )])
+    return closest_distances
 
-    # Add additional coordinates if provided
-    if additional_coords is not None:
-        if not isinstance(additional_coords, np.ndarray) or additional_coords.shape[1] != 3:
-            raise ValueError("Additional coordinates must be a numpy array with shape (n, 3)")
-        
-        x_add = additional_coords[:, 0]
-        y_add = additional_coords[:, 1]
-        z_add = additional_coords[:, 2]
-        
-        fig.add_trace(go.Scatter3d(
-            x=x_add,
-            y=y_add,
-            z=z_add,
-            mode='markers',
-            marker=dict(
-                size=5,
-                color='red',
-                opacity=0.8
-            ),
-            name='Adjusted'
-        ))
+def count_neighbors_within_resolution(point_cloud, resolution):
+    """
+    Calculate the number of neighboring points within a given resolution for each point in a point cloud.
 
-    # Update layout for better visualization
-    fig.update_layout(
-        scene=dict(
-            xaxis_title='X',
-            yaxis_title='Y',
-            zaxis_title='Z'
-        ),
-        title="3D Points Visualization",
-        margin=dict(l=0, r=0, b=0, t=30)
-    )
+    Parameters:
+    point_cloud (numpy.ndarray): A numpy array of shape (N, 3) representing the point cloud,
+                                 where N is the number of points.
+    resolution (float): The distance threshold to count neighboring points.
 
-    # Show the plot
-    fig.show()
+    Returns:
+    numpy.ndarray: A 1D array of length N containing the count of points within the resolution for each point.
+    """
+    num_points = point_cloud.shape[0]
+    neighbor_counts = np.zeros(num_points, dtype=int)
+
+    for i in range(num_points):
+        # Calculate distances from point i to all other points
+        distances = np.linalg.norm(point_cloud - point_cloud[i], axis=1)
+        # Count the number of points within the given resolution (excluding the point itself)
+        neighbor_counts[i] = np.sum((distances < resolution) & (distances > 0))
+
+    return neighbor_counts
 
 
+def extract_boundary_points(point_cloud, resolution, threshold=4):
+    """
+    Extract boundary points from the point cloud by removing points that have at least `threshold` neighbors
+    within the specified resolution.
+
+    Parameters:
+    point_cloud (numpy.ndarray): A numpy array of shape (N, 3) representing the point cloud.
+    resolution (float): The distance threshold to count neighboring points.
+    threshold (int): The number of neighbors a point must have to be considered non-boundary (default is 4).
+
+    Returns:
+    numpy.ndarray: A filtered array of points representing the boundary of the point cloud.
+    """
+    neighbor_counts = count_neighbors_within_resolution(point_cloud, resolution)
+    boundary_points = point_cloud[neighbor_counts < threshold]
+
+    return boundary_points
+
+
+
+def dfs(graph, node, visited):
+    """
+    Depth-first search to explore connected components in a graph.
+
+    Parameters:
+    graph (dict): A dictionary representing the adjacency list of the graph.
+    node: The starting node for the DFS.
+    visited (set): A set to track visited nodes.
+    """
+    visited.add(node)
+    for neighbour in graph[node]:
+        if neighbour not in visited:
+            dfs(graph, neighbour, visited)
+
+def find_connected_subsets(boundary_points, resolution):
+    """
+    Find two connected subsets of boundary points using a graph-based approach.
+
+    Parameters:
+    boundary_points (numpy.ndarray): A numpy array representing the boundary points.
+    resolution (float): The distance threshold to determine connectivity between points.
+
+    Returns:
+    tuple: Two sets of connected boundary points.
+    """
+    num_points = boundary_points.shape[0]
+    graph = {i: set() for i in range(num_points)}
+
+    # Build the graph based on points within the resolution distance
+    for i in range(num_points):
+        for j in range(i + 1, num_points):
+            if np.linalg.norm(boundary_points[i] - boundary_points[j]) < resolution:
+                graph[i].add(j)
+                graph[j].add(i)
+
+    # Find connected subsets using DFS
+    visited = set()
+    subsets = []
+
+    for i in range(num_points):
+        if i not in visited:
+            subset = set()
+            dfs(graph, i, subset)
+            visited.update(subset)
+            subsets.append(subset)
+
+    # Return the first two connected subsets if available
+    if len(subsets) >= 2:
+        return boundary_points[list(subsets[0])], boundary_points[list(subsets[1])]
+    elif len(subsets) == 1:
+        return boundary_points[list(subsets[0])], np.array([])
+    else:
+        return np.array([]), np.array([])
+
+
+def get_epi_endo_from_coords(LV_coords, resolution):
+    coords_epi = []
+    coords_endo = []
+    for points in LV_coords:
+        bc_points = extract_boundary_points(points, resolution)
+        coords_epi_k, coords_endo_k = find_connected_subsets(bc_points, resolution*np.sqrt(2))
+        if len(coords_epi_k)<len(coords_endo_k):
+            temp = coords_endo_k
+            coords_endo_k = coords_epi_k
+            coords_epi_k = temp
+        coords_epi.append(coords_epi_k)
+        coords_endo.append(coords_endo_k)
+    return coords_epi, coords_endo
+
+def sort_epi_endo_coords(coords_epi, coords_endo, resolution):
+    coords_epi_sorted = []
+    coords_endo_sorted = []
+    K = len(coords_epi)
+    for k in range(K):
+        coords_epi_k = coords_epi[k]
+        coords_epi_k_sorted = mu.sorting_coords(coords_epi_k, resolution*np.sqrt(2))
+        coords_epi_sorted.append(coords_epi_k_sorted)
+        if len(coords_endo)>=K:
+            coords_endo_k = coords_endo[k]
+            coords_endo_k_sorted = mu.sorting_coords(coords_endo_k, resolution*np.sqrt(2))
+            coords_endo_sorted.append(coords_endo_k_sorted)
+    
+    return coords_epi_sorted, coords_endo_sorted
 
 # %%
 def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True):
@@ -189,34 +270,33 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
     coords, P_a_endo, P_a_epi  = read_data_h5(h5_file_address.as_posix())
     LV_coords_raw = restructure_coords_into_slices(coords, z_tolerance=0.1)
     LV_coords_raw = average_z_for_slices(LV_coords_raw)
-    plot_3d_points(coords, additional_coords=np.vstack(LV_coords_raw))
-    breakpoint()
-    # slice_thickness = 1
-    logger.info(f"Reading mask with slice thickness of {slice_thickness}mm and resolution of {resolution}mm")
-    LVmask = close_apex(LVmask_raw)
-    logger.info("Mask is loaded and apex is closed")
-
-    mask_epi, mask_endo = mu.get_endo_epi(LVmask)
+    
+    #TODO updated h5 file to get resolution
+    logger.warning("***** resolution is hard coded *****")
+    resolution = 1.02272725 * 1.01
+    
+    coords_epi_unsorted, coords_endo_unsorted = get_epi_endo_from_coords(LV_coords_raw, resolution)
+    coords_epi, coords_endo= sort_epi_endo_coords(coords_epi_unsorted, coords_endo_unsorted, resolution)
     
     if plot_flag:
         outdir = output_folder / "01_Masks"
         outdir.mkdir(exist_ok=True)
-        K = len(mask_epi)
-        K_endo = len(mask_endo)
+        K = len(coords_epi)
+        K_endo = len(coords_endo)
         for k in range(K):
-            mask_epi_k = mask_epi[k]
-            mask_endo_k = mask_endo[k]
-            LVmask_k = LVmask[k]
-            new_image = utils.image_overlay(LVmask_k, mask_epi_k, mask_endo_k)
+            mask_epi_k = coords_epi[k]
+            mask_endo_k = coords_endo[k]
+            LVmask_k = LV_coords_raw[k]
             fnmae = outdir.as_posix() + "/" + str(k) + ".png"
-            plt.imshow(new_image)
-            dpi = np.round((300/resolution)/100)*100
-            plt.savefig(fnmae, dpi=dpi)
+            plt.scatter(LVmask_k[:,0], LVmask_k[:,1])
+            plt.scatter(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
+            plt.scatter(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
+            plt.plot(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
+            plt.plot(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
+            plt.savefig(fnmae, dpi=300)
             plt.close()
     
-    coords_epi = mu.get_coords_from_mask(mask_epi, resolution, slice_thickness)
-    coords_endo = mu.get_coords_from_mask(mask_endo, resolution, slice_thickness)
-
+    logger.info(f"Epi and Endo coords are extracted from point clouds")
     tck_epi = mu.get_shax_from_coords(
         coords_epi, mesh_settings["smooth_level_epi"]
     )
