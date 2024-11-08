@@ -1,6 +1,8 @@
 from pathlib import Path
 import argparse
 import json
+import numpy as np
+
 from structlog import get_logger
 
 import meshing_utils
@@ -70,8 +72,14 @@ def main(args=None) -> int:
     mesh_settings = settings["mesh"][mesh_quality]
 
     sample_directory = data_directory / sample_name
-    points_cloud_epi_unique, points_cloud_endo_unique = meshing_utils.create_mesh(mesh_settings, sample_directory, output_folder)
+    points_cloud_epi, points_cloud_endo = meshing_utils.generate_pc(mesh_settings, sample_directory, output_folder)
 
-
+    points_cloud_epi = np.vstack(points_cloud_epi)
+    points_cloud_endo = np.vstack(points_cloud_endo)
+    
+    output_folder = Path((sample_directory / output_folder))
+    np.savetxt(output_folder.as_posix()+'/points_cloud_epi.csv', points_cloud_epi, delimiter=',', fmt='%.8f')
+    np.savetxt(output_folder.as_posix()+'/points_cloud_endo.csv', points_cloud_endo, delimiter=',', fmt='%.8f')
+    
 if __name__ == "__main__":
     main()
