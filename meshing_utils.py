@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import plotly.graph_objects as go
 import cv2 as cv
+from tqdm import tqdm
+import open3d as o3d
 
 import ventric_mesh.mesh_utils as mu
 import ventric_mesh.utils as utils
@@ -11,15 +13,17 @@ import matplotlib.pyplot as plt
 from structlog import get_logger
 
 logger = get_logger()
-
+# res_21 = 
 
 # %%
 def read_data_h5(file_dir):
     with h5py.File(file_dir, "r") as h5_file:
-        LVmask = h5_file["LVmask"][:]
-        slice_thickness = h5_file["slice_thickness"][0]
-        resolution = h5_file["resolution"][0]
-    return LVmask, slice_thickness, resolution
+        LVmask = h5_file["sax_coords"][:]
+        P_a_endo = h5_file["P_a_endo"][:]
+        P_a_epi = h5_file["P_a_epi"][:]
+        resolution = h5_file["resolution"][:]
+        # slice_thicknesses = h5_file["slice_thicknesses"][:]
+    return LVmask, P_a_endo, P_a_epi, resolution
 
 
 def close_apex(LVmask):
@@ -46,38 +50,260 @@ def located_h5(data_address):
     return h5_file
 
 
+def restructure_coords_into_slices(coords, z_tolerance=0.1):
+    """
+    Restructures the input coordinates into slices based on z-values.
+
+    Parameters:
+    coords (np.ndarray): An n by 3 array where each row represents a 3D coordinate (x, y, z).
+    z_tolerance (float): The maximum difference in z-values to consider points as part of the same slice.
+
+    Returns:
+    list: A list of K slices, where each slice is an M by 3 numpy array.
+    """
+    if not isinstance(coords, np.ndarray) or coords.shape[1] != 3:
+        raise ValueError("Input must be a numpy array with shape (n, 3)")
+    
+    # Sort the coordinates based on the z-values
+    coords = coords[coords[:, 2].argsort()[::-1]]
+
+    # Group coordinates into slices
+    slices = []
+    current_slice = [coords[0]]
+
+    for i in range(1, len(coords)):
+        if abs(coords[i, 2] - current_slice[-1][2]) <= z_tolerance:
+            current_slice.append(coords[i])
+        else:
+            slices.append(np.array(current_slice))
+            current_slice = [coords[i]]
+    
+    # Append the last slice
+    if current_slice:
+        slices.append(np.array(current_slice))
+    
+    return slices
+
+def average_z_for_slices(slices):
+    """
+    Adjusts the z-values of all points in each slice to the average z-value of that slice and logs the overall mean and standard deviation of distance changes.
+
+    Parameters:
+    slices (list): A list of K slices, where each slice is an M by 3 numpy array.
+
+    Returns:
+    list: A list of K slices with adjusted z-values.
+    """
+    adjusted_slices = []
+    distance_changes = []
+
+    for slice in slices:
+        avg_z = np.mean(slice[:, 2])
+        distances = np.abs(slice[:, 2] - avg_z)
+        distance_changes.extend(distances)
+
+        adjusted_slice = slice.copy()
+        adjusted_slice[:, 2] = avg_z
+        adjusted_slices.append(adjusted_slice)
+    
+    if distance_changes:
+        mean_change = np.mean(distance_changes)
+        std_change = np.std(distance_changes)
+        logger.warning(f"Mean change in z-values: {mean_change:.4f} ± {std_change:.4f}")
+    
+    return adjusted_slices
+
+def calculate_closest_distances(point_cloud):
+    """
+    Calculate the distance to the closest point for each point in a given point cloud.
+
+    Parameters:
+    point_cloud (numpy.ndarray): A numpy array of shape (N, 3) representing the point cloud,
+                                 where N is the number of points.
+
+    Returns:
+    numpy.ndarray: A 1D array of length N containing the distances to the closest point for each point.
+    """
+    num_points = point_cloud.shape[0]
+    closest_distances = np.full(num_points, np.inf)
+
+    for i in range(num_points):
+        # Calculate distances from point i to all other points
+        distances = np.linalg.norm(point_cloud - point_cloud[i], axis=1)
+        distances[i] = np.inf  # Exclude self-distance
+        closest_distances[i] = np.min(distances)
+
+    return closest_distances
+
+def count_neighbors_within_resolution(point_cloud, resolution):
+    """
+    Calculate the number of neighboring points within a given resolution for each point in a point cloud.
+
+    Parameters:
+    point_cloud (numpy.ndarray): A numpy array of shape (N, 3) representing the point cloud,
+                                 where N is the number of points.
+    resolution (float): The distance threshold to count neighboring points.
+
+    Returns:
+    numpy.ndarray: A 1D array of length N containing the count of points within the resolution for each point.
+    """
+    num_points = point_cloud.shape[0]
+    neighbor_counts = np.zeros(num_points, dtype=int)
+
+    for i in range(num_points):
+        # Calculate distances from point i to all other points
+        distances = np.linalg.norm(point_cloud - point_cloud[i], axis=1)
+        # Count the number of points within the given resolution (excluding the point itself)
+        neighbor_counts[i] = np.sum((distances < resolution) & (distances > 0))
+
+    return neighbor_counts
+
+
+def extract_boundary_points(point_cloud, resolution, threshold=4):
+    """
+    Extract boundary points from the point cloud by removing points that have at least `threshold` neighbors
+    within the specified resolution.
+
+    Parameters:
+    point_cloud (numpy.ndarray): A numpy array of shape (N, 3) representing the point cloud.
+    resolution (float): The distance threshold to count neighboring points.
+    threshold (int): The number of neighbors a point must have to be considered non-boundary (default is 4).
+
+    Returns:
+    numpy.ndarray: A filtered array of points representing the boundary of the point cloud.
+    """
+    neighbor_counts = count_neighbors_within_resolution(point_cloud, resolution)
+    boundary_points = point_cloud[neighbor_counts < threshold]
+
+    return boundary_points
+
+
+
+def dfs(graph, node, visited):
+    """
+    Depth-first search to explore connected components in a graph.
+
+    Parameters:
+    graph (dict): A dictionary representing the adjacency list of the graph.
+    node: The starting node for the DFS.
+    visited (set): A set to track visited nodes.
+    """
+    visited.add(node)
+    for neighbour in graph[node]:
+        if neighbour not in visited:
+            dfs(graph, neighbour, visited)
+
+def find_connected_subsets(boundary_points, resolution):
+    """
+    Find two connected subsets of boundary points using a graph-based approach.
+
+    Parameters:
+    boundary_points (numpy.ndarray): A numpy array representing the boundary points.
+    resolution (float): The distance threshold to determine connectivity between points.
+
+    Returns:
+    tuple: Two sets of connected boundary points.
+    """
+    num_points = boundary_points.shape[0]
+    graph = {i: set() for i in range(num_points)}
+
+    # Build the graph based on points within the resolution distance
+    for i in range(num_points):
+        for j in range(i + 1, num_points):
+            if np.linalg.norm(boundary_points[i] - boundary_points[j]) < resolution:
+                graph[i].add(j)
+                graph[j].add(i)
+
+    # Find connected subsets using DFS
+    visited = set()
+    subsets = []
+
+    for i in range(num_points):
+        if i not in visited:
+            subset = set()
+            dfs(graph, i, subset)
+            visited.update(subset)
+            subsets.append(subset)
+
+    # Return the first two connected subsets if available
+    if len(subsets) >= 2:
+        return boundary_points[list(subsets[0])], boundary_points[list(subsets[1])]
+    elif len(subsets) == 1:
+        return boundary_points[list(subsets[0])], np.array([])
+    else:
+        return np.array([]), np.array([])
+
+
+def get_epi_endo_from_coords(LV_coords, resolution):
+    coords_epi = []
+    coords_endo = []
+    for points in LV_coords:
+        bc_points = extract_boundary_points(points, resolution)
+        coords_epi_k, coords_endo_k = find_connected_subsets(bc_points, resolution*np.sqrt(2))
+        if len(coords_epi_k)<len(coords_endo_k):
+            temp = coords_endo_k
+            coords_endo_k = coords_epi_k
+            coords_epi_k = temp
+        coords_epi.append(coords_epi_k)
+        coords_endo.append(coords_endo_k)
+    return coords_epi, coords_endo
+
+def sort_epi_endo_coords(coords_epi, coords_endo, resolution):
+    coords_epi_sorted = []
+    coords_endo_sorted = []
+    K = len(coords_epi)
+    for k in range(K):
+        coords_epi_k = coords_epi[k]
+        coords_epi_k_sorted = mu.sorting_coords(coords_epi_k, resolution*np.sqrt(2))
+        coords_epi_sorted.append(coords_epi_k_sorted)
+        if len(coords_endo)>=K:
+            coords_endo_k = coords_endo[k]
+            coords_endo_k_sorted = mu.sorting_coords(coords_endo_k, resolution*np.sqrt(2))
+            coords_endo_sorted.append(coords_endo_k_sorted)
+    
+    return coords_epi_sorted, coords_endo_sorted
+
 # %%
-def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True):
-    output_folder = Path((sample_directory / "00_results"))
+def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True):
+    output_folder = Path((sample_directory / output_folder))
     output_folder.mkdir(exist_ok=True, parents=True)
 
     h5_file_address = located_h5(sample_directory)
-    LVmask_raw, slice_thickness, resolution = read_data_h5(h5_file_address.as_posix())
-    logger.info(f"Reading mask with slice thickness of {slice_thickness}mm and resolution of {resolution}mm")
-    LVmask = close_apex(LVmask_raw)
-    logger.info("Mask is loaded and apex is closed")
+    coords, P_a_endo, P_a_epi, resolution_data  = read_data_h5(h5_file_address.as_posix())
+    LV_coords_raw = restructure_coords_into_slices(coords, z_tolerance=0.1)
+    LV_coords_raw = average_z_for_slices(LV_coords_raw)
 
-    mask_epi, mask_endo = mu.get_endo_epi(LVmask)
+    resolution = resolution_data[0] * 1.01
+    slice_thickness = resolution_data[2]
+    
+    coords_epi_unsorted, coords_endo_unsorted = get_epi_endo_from_coords(LV_coords_raw, resolution)
+    coords_epi, coords_endo= sort_epi_endo_coords(coords_epi_unsorted, coords_endo_unsorted, resolution)
     
     if plot_flag:
         outdir = output_folder / "01_Masks"
         outdir.mkdir(exist_ok=True)
-        K = len(mask_epi)
-        K_endo = len(mask_endo)
+        K = len(coords_epi)
+        K_endo = len(coords_endo)
         for k in range(K):
-            mask_epi_k = mask_epi[k]
-            mask_endo_k = mask_endo[k]
-            LVmask_k = LVmask[k]
-            new_image = utils.image_overlay(LVmask_k, mask_epi_k, mask_endo_k)
+            mask_epi_k = coords_epi[k]
+            mask_endo_k = coords_endo[k]
+            LVmask_k = LV_coords_raw[k]
             fnmae = outdir.as_posix() + "/" + str(k) + ".png"
-            plt.imshow(new_image)
-            dpi = np.round((300/resolution)/100)*100
-            plt.savefig(fnmae, dpi=dpi)
+            plt.scatter(LVmask_k[:,0], LVmask_k[:,1])
+            plt.scatter(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
+            plt.scatter(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
+            plt.plot(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
+            plt.plot(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
+            plt.savefig(fnmae, dpi=300)
             plt.close()
     
-    coords_epi = mu.get_coords_from_mask(mask_epi, resolution, slice_thickness)
-    coords_endo = mu.get_coords_from_mask(mask_endo, resolution, slice_thickness)
-
+    logger.info(f"Epi and Endo coords are extracted from point clouds")
+    
+    slice_thicknesses = [coords_epi[k][0,2]-coords_epi[k+1][0,2] for k in range(len(coords_epi)-1)]
+    slice_thickness_ave = np.mean(slice_thicknesses)
+    logger.warning(f"Slice thickness is {slice_thickness} while the averaged based on coords is {slice_thickness_ave}")
+    
+    
     tck_epi = mu.get_shax_from_coords(
         coords_epi, mesh_settings["smooth_level_epi"]
     )
@@ -105,12 +331,14 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
     )
 
     apex_threshold = mu.get_apex_threshold(sample_points_epi, sample_points_endo)
+    logger.info("Using slice thickness average for lax points")
+    
     LAX_points_epi, apex_epi = mu.create_lax_points(
-        sample_points_epi, apex_threshold, slice_thickness
+        sample_points_epi, apex_threshold, slice_thickness, apex_coord=P_a_epi
     )
     LAX_points_endo, apex_endo = mu.create_lax_points(
-        sample_points_endo, apex_threshold, slice_thickness
-    )
+        sample_points_endo, apex_threshold, slice_thickness, apex_coord=P_a_endo
+    )    
     tck_lax_epi = mu.get_lax_from_laxpoints(
         LAX_points_epi, mesh_settings["lax_smooth_level_epi"], mesh_settings["lax_spline_order_epi"]
     )
@@ -130,17 +358,20 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         fnmae = outdir.as_posix() + "/lax_splines.html"
         fig.write_html(fnmae)
 
+    z_base = coords_epi[0][0,2]
     tck_shax_epi = mu.get_shax_from_lax(
         tck_lax_epi,
         apex_epi,
         mesh_settings["num_z_sections_epi"],
-        mesh_settings["z_sections_flag_epi"],
+        z_sections_flag = mesh_settings["z_sections_flag_epi"],
+        z_base=z_base
     )
     tck_shax_endo = mu.get_shax_from_lax(
         tck_lax_endo,
         apex_endo,
         mesh_settings["num_z_sections_endo"],
-        mesh_settings["z_sections_flag_endo"],
+        z_sections_flag = mesh_settings["z_sections_flag_endo"],
+        z_base=z_base
     )
     if plot_flag:
         outdir = output_folder / "04_Contours"
@@ -151,21 +382,17 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         )
         fnmae = outdir.as_posix() + "/Contour.html"
         fig.write_html(fnmae)
-    points_cloud_epi, k_apex_epi  = mu.create_point_cloud(
-        tck_shax_epi,
-        apex_epi,
-        mesh_settings["seed_num_base_epi"],
-        seed_num_threshold=mesh_settings["seed_num_threshold_epi"],
+    
+    points_cloud_epi = mu.get_sample_points_from_shax(
+        tck_shax_epi, mesh_settings["seed_num_base_epi"]
     )
-    points_cloud_endo, k_apex_endo = mu.create_point_cloud(
-        tck_shax_endo,
-        apex_endo,
-        mesh_settings["seed_num_base_endo"],
-        seed_num_threshold=mesh_settings["seed_num_threshold_endo"],
+    points_cloud_endo = mu.get_sample_points_from_shax(
+        tck_shax_endo, mesh_settings["seed_num_base_endo"]
     )
-    # Calculate normals
-    normals_list_endo = mu.calculate_normals(points_cloud_endo, k_apex_endo)
-    normals_list_epi = mu.calculate_normals(points_cloud_epi, k_apex_epi)
+    
+    points_cloud_epi.append(P_a_epi)
+    points_cloud_endo.append(P_a_endo)
+    
     if plot_flag:
         outdir = output_folder / "05_Point Cloud"
         outdir.mkdir(exist_ok=True)
@@ -179,62 +406,5 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
             mu.plot_3d_points_on_figure(points, fig=fig)
         fnmae = outdir.as_posix() + "/Points_cloud_endo.html"
         fig.write_html(fnmae)
-    mesh_dir = output_folder / "06_Mesh"
-    mesh_dir.mkdir(exist_ok=True, parents=True)
-    mesh_epi_filename, mesh_endo_filename, mesh_base_filename = mu.VentricMesh_poisson(
-        points_cloud_epi,
-        points_cloud_endo,
-        mesh_settings["num_mid_layers_base"],
-        SurfaceMeshSizeEpi=mesh_settings["SurfaceMeshSizeEpi"],
-        SurfaceMeshSizeEndo=mesh_settings["SurfaceMeshSizeEndo"],
-        normals_list_epi = normals_list_epi,
-        normals_list_endo = normals_list_endo,
-        save_flag=True,
-        filename_suffix="",
-        result_folder=mesh_dir.as_posix() + "/",
-    )
-    output_mesh_filename = mesh_dir / 'Mesh_3D.msh'
-    mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=mesh_settings["MeshSizeMin"], MeshSizeMax=mesh_settings["MeshSizeMax"])
-    if plot_flag:
-        fig = utils.plot_coords_and_mesh(coords_epi, coords_endo, mesh_epi_filename, mesh_endo_filename)
-        fname = mesh_dir.as_posix() + "/Mesh_vs_Coords.html"
-        fig.write_html(fname)
-        
     
-    errors_epi = utils.calculate_error_between_coords_and_mesh(coords_epi, mesh_epi_filename)
-    errors_endo = utils.calculate_error_between_coords_and_mesh(coords_endo, mesh_endo_filename)
-    
-    all_errors = np.concatenate([errors_epi, errors_endo])
-    xlim = (np.min(all_errors), np.max(all_errors))
-    hist_epi, _ = np.histogram(errors_epi, bins=30)
-    hist_endo, _ = np.histogram(errors_endo, bins=30)
-    max_y = max(np.max(hist_epi), np.max(hist_endo))
-    ylim = (0, max_y + max_y * 0.1)  # Add 10% padding for aesthetics
-
-    fname_epi = mesh_dir / "Epi_mesh_errors.png"
-    fname_endo = mesh_dir / "Endo_mesh_errors.png"
-
-    utils.plot_error_histogram(
-        errors=errors_epi,
-        fname=fname_epi,
-        color='red',
-        xlim=xlim,
-        ylim=ylim,
-        title_prefix='Epi', 
-        resolution=resolution
-    )
-
-    utils.plot_error_histogram(
-        errors=errors_endo,
-        fname=fname_endo,
-        color='blue',
-        xlim=xlim,
-        ylim=ylim,
-        title_prefix='Endo', 
-        resolution=resolution
-    )
-    fname_epi = fname_epi.as_posix()[:-4] + ".txt"
-    utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium", resolution=resolution)
-    fname_endo = fname_endo.as_posix()[:-4] + ".txt"
-    utils.save_error_distribution_report(errors_endo, fname_endo, n_bins=10,  surface_name="Endocardium", resolution=resolution)
-    return output_mesh_filename
+    return points_cloud_epi, points_cloud_endo
