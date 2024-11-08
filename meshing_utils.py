@@ -21,7 +21,9 @@ def read_data_h5(file_dir):
         LVmask = h5_file["sax_coords"][:]
         P_a_endo = h5_file["P_a_endo"][:]
         P_a_epi = h5_file["P_a_epi"][:]
-    return LVmask, P_a_endo, P_a_epi 
+        resolution = h5_file["resolution"][:]
+        # slice_thicknesses = h5_file["slice_thicknesses"][:]
+    return LVmask, P_a_endo, P_a_epi, resolution
 
 
 def close_apex(LVmask):
@@ -262,18 +264,17 @@ def sort_epi_endo_coords(coords_epi, coords_endo, resolution):
     return coords_epi_sorted, coords_endo_sorted
 
 # %%
-def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True):
-    output_folder = Path((sample_directory / "00_results"))
+def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True):
+    output_folder = Path((sample_directory / output_folder))
     output_folder.mkdir(exist_ok=True, parents=True)
 
     h5_file_address = located_h5(sample_directory)
-    coords, P_a_endo, P_a_epi  = read_data_h5(h5_file_address.as_posix())
+    coords, P_a_endo, P_a_epi, resolution_data  = read_data_h5(h5_file_address.as_posix())
     LV_coords_raw = restructure_coords_into_slices(coords, z_tolerance=0.1)
     LV_coords_raw = average_z_for_slices(LV_coords_raw)
-    
-    #TODO updated h5 file to get resolution
-    logger.warning("***** resolution is hard coded *****")
-    resolution = 1.02272725 * 1.01
+
+    resolution = resolution_data[0] * 1.01
+    slice_thickness = resolution_data[2]
     
     coords_epi_unsorted, coords_endo_unsorted = get_epi_endo_from_coords(LV_coords_raw, resolution)
     coords_epi, coords_endo= sort_epi_endo_coords(coords_epi_unsorted, coords_endo_unsorted, resolution)
@@ -300,6 +301,8 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
     
     slice_thicknesses = [coords_epi[k][0,2]-coords_epi[k+1][0,2] for k in range(len(coords_epi)-1)]
     slice_thickness_ave = np.mean(slice_thicknesses)
+    logger.warning(f"Slice thickness is {slice_thickness} while the averaged based on coords is {slice_thickness_ave}")
+    
     
     tck_epi = mu.get_shax_from_coords(
         coords_epi, mesh_settings["smooth_level_epi"]
@@ -329,12 +332,13 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
 
     apex_threshold = mu.get_apex_threshold(sample_points_epi, sample_points_endo)
     logger.info("Using slice thickness average for lax points")
+    
     LAX_points_epi, apex_epi = mu.create_lax_points(
-        sample_points_epi, apex_threshold, slice_thickness_ave
+        sample_points_epi, apex_threshold, slice_thickness, apex_coord=P_a_epi
     )
     LAX_points_endo, apex_endo = mu.create_lax_points(
-        sample_points_endo, apex_threshold, slice_thickness_ave
-    )
+        sample_points_endo, apex_threshold, slice_thickness, apex_coord=P_a_endo
+    )    
     tck_lax_epi = mu.get_lax_from_laxpoints(
         LAX_points_epi, mesh_settings["lax_smooth_level_epi"], mesh_settings["lax_spline_order_epi"]
     )
@@ -354,17 +358,20 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         fnmae = outdir.as_posix() + "/lax_splines.html"
         fig.write_html(fnmae)
 
+    z_base = coords_epi[0][0,2]
     tck_shax_epi = mu.get_shax_from_lax(
         tck_lax_epi,
         apex_epi,
         mesh_settings["num_z_sections_epi"],
-        mesh_settings["z_sections_flag_epi"],
+        z_sections_flag = mesh_settings["z_sections_flag_epi"],
+        z_base=z_base
     )
     tck_shax_endo = mu.get_shax_from_lax(
         tck_lax_endo,
         apex_endo,
         mesh_settings["num_z_sections_endo"],
-        mesh_settings["z_sections_flag_endo"],
+        z_sections_flag = mesh_settings["z_sections_flag_endo"],
+        z_base=z_base
     )
     if plot_flag:
         outdir = output_folder / "04_Contours"
@@ -375,67 +382,29 @@ def create_mesh(mesh_settings, sample_directory, output_folder, plot_flag = True
         )
         fnmae = outdir.as_posix() + "/Contour.html"
         fig.write_html(fnmae)
-    points_cloud_epi, k_apex_epi  = mu.create_point_cloud(
-        tck_shax_epi,
-        apex_epi,
-        mesh_settings["seed_num_base_epi"],
-        seed_num_threshold=mesh_settings["seed_num_threshold_epi"],
-        update_seed_num_flag = False
+    
+    points_cloud_epi = mu.get_sample_points_from_shax(
+        tck_shax_epi, mesh_settings["seed_num_base_epi"]
     )
-    points_cloud_endo, k_apex_endo = mu.create_point_cloud(
-        tck_shax_endo,
-        apex_endo,
-        mesh_settings["seed_num_base_endo"],
-        seed_num_threshold=mesh_settings["seed_num_threshold_endo"],
-        update_seed_num_flag = False
+    points_cloud_endo = mu.get_sample_points_from_shax(
+        tck_shax_endo, mesh_settings["seed_num_base_endo"]
     )
     
-    points_cloud_epi_unique = points_cloud_epi[:k_apex_epi]
-    points_cloud_endo_unique = points_cloud_endo[:k_apex_endo]
+    points_cloud_epi.append(P_a_epi)
+    points_cloud_endo.append(P_a_endo)
     
-    updated_apex_epi = apex_epi
-    updated_apex_epi[2] = points_cloud_epi_unique[-1][0,2]
-    updated_tck_shax_epi = mu.get_shax_from_lax(
-        tck_lax_epi,
-        updated_apex_epi,
-        mesh_settings["num_z_sections_epi"],
-        mesh_settings["z_sections_flag_epi"],
-    )
-    
-    updated_apex_endo = apex_endo
-    updated_apex_endo[2] = points_cloud_endo_unique[-1][0,2]
-    updated_tck_shax_endo = mu.get_shax_from_lax(
-        tck_lax_endo,
-        updated_apex_endo,
-        mesh_settings["num_z_sections_endo"],
-        mesh_settings["z_sections_flag_endo"],
-    )
-    
-    updated_points_cloud_epi = []
-    K = len(updated_tck_shax_epi)
-    for k in tqdm(range(K), desc="Creating final unique point cloud ", ncols=100):
-        tck_k = updated_tck_shax_epi[k]
-        points = mu.equally_spaced_points_on_spline(tck_k, mesh_settings["seed_num_base_epi"])
-        updated_points_cloud_epi.append(points)
-
-    updated_points_cloud_endo = []
-    K = len(updated_tck_shax_endo)
-    for k in tqdm(range(K), desc="Creating final unique point cloud", ncols=100):
-        tck_k = updated_tck_shax_endo[k]
-        points = mu.equally_spaced_points_on_spline(tck_k, mesh_settings["seed_num_base_epi"])
-        updated_points_cloud_endo.append(points)
-
     if plot_flag:
         outdir = output_folder / "05_Point Cloud"
         outdir.mkdir(exist_ok=True)
         fig = go.Figure()
-        for points in updated_points_cloud_epi:
+        for points in points_cloud_epi:
             mu.plot_3d_points_on_figure(points, fig=fig)
         fnmae = outdir.as_posix() + "/Points_cloud_epi.html"
         fig.write_html(fnmae)
         fig = go.Figure()
-        for points in updated_points_cloud_endo:
+        for points in points_cloud_endo:
             mu.plot_3d_points_on_figure(points, fig=fig)
         fnmae = outdir.as_posix() + "/Points_cloud_endo.html"
         fig.write_html(fnmae)
-    return points_cloud_epi_unique, points_cloud_endo_unique
+    
+    return points_cloud_epi, points_cloud_endo
