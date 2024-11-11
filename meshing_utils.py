@@ -273,6 +273,21 @@ def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True
     LV_coords_raw = restructure_coords_into_slices(coords, z_tolerance=0.1)
     LV_coords_raw = average_z_for_slices(LV_coords_raw)
 
+    # Just saving raw data for inspection of the raw coordinates, e.g., if they form a close loop or not
+    if plot_flag:
+        outdir = output_folder / "01_Masks"
+        outdir.mkdir(exist_ok=True)
+        K = len(LV_coords_raw)
+        for k in range(K):
+            LVmask_k = LV_coords_raw[k]
+            fnmae = outdir.as_posix() + "/" + str(k) + ".png"
+            plt.scatter(LVmask_k[:,0], LVmask_k[:,1], s=1)
+            plt.xlim((-50,+50))
+            plt.ylim((-50,+50))
+            plt.grid(True)
+            plt.savefig(fnmae, dpi=300)
+            plt.close()
+
     resolution = resolution_data[0] * 1.01
     slice_thickness = resolution_data[2]
     
@@ -289,13 +304,24 @@ def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True
             mask_endo_k = coords_endo[k]
             LVmask_k = LV_coords_raw[k]
             fnmae = outdir.as_posix() + "/" + str(k) + ".png"
-            plt.scatter(LVmask_k[:,0], LVmask_k[:,1])
-            plt.scatter(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
-            plt.scatter(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
+            plt.scatter(LVmask_k[:,0], LVmask_k[:,1], s=1)
+            plt.scatter(mask_epi_k[:,0], mask_epi_k[:,1], s=1, color = 'red')
+            plt.scatter(mask_endo_k[:,0], mask_endo_k[:,1], s=1,color = 'blue')
             plt.plot(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
             plt.plot(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
+            plt.xlim((-50,+50))
+            plt.ylim((-50,+50))
+            plt.grid(True)
             plt.savefig(fnmae, dpi=300)
             plt.close()
+        fnmae = outdir.as_posix() + "/" + str(k+1) + ".png"
+        plt.scatter(P_a_epi[0], P_a_epi[1], s=1, color = 'red')
+        plt.scatter(P_a_endo[0], P_a_endo[1], s=1, color = 'blue')
+        plt.xlim((-50,+50))
+        plt.ylim((-50,+50))
+        plt.grid(True)
+        plt.savefig(fnmae, dpi=300)
+        plt.close()
     
     logger.info(f"Epi and Endo coords are extracted from point clouds")
     
