@@ -16,6 +16,12 @@ logger = get_logger()
 # res_21 = 
 
 # %%
+def read_data_h5_mask(file_dir):
+    with h5py.File(file_dir, "r") as h5_file:
+        LVmask = h5_file["LVmask"][:]
+        resolution = h5_file["resolution"][:]
+    return LVmask, resolution
+
 def read_data_h5(file_dir):
     with h5py.File(file_dir, "r") as h5_file:
         LVmask = h5_file["sax_coords"][:]
@@ -264,12 +270,15 @@ def sort_epi_endo_coords(coords_epi, coords_endo, resolution):
     return coords_epi_sorted, coords_endo_sorted
 
 # %%
-def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True):
+def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_flag = True):
     output_folder = Path((sample_directory / output_folder))
     output_folder.mkdir(exist_ok=True, parents=True)
 
     h5_file_address = located_h5(sample_directory)
-    coords, P_a_endo, P_a_epi, resolution_data  = read_data_h5(h5_file_address.as_posix())
+    if mask_flag:
+        LVmask, resolution_data = read_data_h5_mask(h5_file_address.as_posix())
+    else:
+        coords, P_a_endo, P_a_epi, resolution_data  = read_data_h5(h5_file_address.as_posix())
     LV_coords_raw = restructure_coords_into_slices(coords, z_tolerance=0.1)
     LV_coords_raw = average_z_for_slices(LV_coords_raw)
 
