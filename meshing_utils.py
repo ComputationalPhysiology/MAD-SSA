@@ -405,7 +405,10 @@ def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_
 
     apex_threshold = mu.get_apex_threshold(sample_points_epi, sample_points_endo)
     logger.info("Using slice thickness average for lax points")
-    
+    if mask_flag:
+        P_a_epi = None
+        P_a_endo = None
+
     LAX_points_epi, apex_epi = mu.create_lax_points(
         sample_points_epi, apex_threshold, slice_thickness, apex_coord=P_a_epi
     )
@@ -463,8 +466,8 @@ def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_
         tck_shax_endo, mesh_settings["seed_num_base_endo"]
     )
     
-    points_cloud_epi.append(P_a_epi)
-    points_cloud_endo.append(P_a_endo)
+    points_cloud_epi.append(apex_epi)
+    points_cloud_endo.append(apex_endo)
     
     if plot_flag:
         outdir = output_folder / "05_Point Cloud"
