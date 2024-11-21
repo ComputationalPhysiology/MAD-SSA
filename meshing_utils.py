@@ -16,6 +16,12 @@ logger = get_logger()
 # res_21 = 
 
 # %%
+def read_data_h5_mask(file_dir):
+    with h5py.File(file_dir, "r") as h5_file:
+        LVmask = h5_file["LVmask"][:]
+        resolution = h5_file["resolution"][:]
+    return LVmask, resolution
+
 def read_data_h5(file_dir):
     with h5py.File(file_dir, "r") as h5_file:
         LVmask = h5_file["sax_coords"][:]
@@ -25,6 +31,11 @@ def read_data_h5(file_dir):
         # slice_thicknesses = h5_file["slice_thicknesses"][:]
     return LVmask, P_a_endo, P_a_epi, resolution
 
+def invert_coords(*coords):
+    inverted_coords = []
+    for coord in coords:
+        inverted_coords.append(coord[:, ::-1])
+    return inverted_coords
 
 def close_apex(LVmask):
     K, I, J = LVmask.shape
@@ -264,71 +275,107 @@ def sort_epi_endo_coords(coords_epi, coords_endo, resolution):
     return coords_epi_sorted, coords_endo_sorted
 
 # %%
-def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True):
+def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_flag = True):
     output_folder = Path((sample_directory / output_folder))
     output_folder.mkdir(exist_ok=True, parents=True)
 
     h5_file_address = located_h5(sample_directory)
-    coords, P_a_endo, P_a_epi, resolution_data  = read_data_h5(h5_file_address.as_posix())
-    LV_coords_raw = restructure_coords_into_slices(coords, z_tolerance=0.1)
-    LV_coords_raw = average_z_for_slices(LV_coords_raw)
+    if mask_flag:
+        LVmask_raw_reorderd, resolution_data = read_data_h5_mask(h5_file_address.as_posix())
+        LVmask_raw_inverted = np.transpose(LVmask_raw_reorderd, (2, 0, 1))
+        if mesh_settings["mask_is_inverted"]:
+            LVmask_raw = LVmask_raw_inverted[::-1,:,:]
+        # Filter out the slices where all I x J elements are zero, i.e., empty image
+        LVmask_raw = LVmask_raw[~np.all(LVmask_raw == 0, axis=(1, 2))]        
+        resolution = resolution_data[0] * 1.01
+        slice_thickness = resolution_data[2]
+        logger.info(f"Reading mask with slice thickness of {slice_thickness}mm and resolution of {resolution}mm")
+        
+        LVmask = close_apex(LVmask_raw)
+        # LVmask = LVmask_raw_inverted
+        logger.info("Mask is loaded and apex is closed")
 
-    # Just saving raw data for inspection of the raw coordinates, e.g., if they form a close loop or not
-    if plot_flag:
-        outdir = output_folder / "01_Masks"
-        outdir.mkdir(exist_ok=True)
-        K = len(LV_coords_raw)
-        for k in range(K):
-            LVmask_k = LV_coords_raw[k]
-            fnmae = outdir.as_posix() + "/" + str(k) + ".png"
-            plt.scatter(LVmask_k[:,0], LVmask_k[:,1], s=1)
+        mask_epi, mask_endo = mu.get_endo_epi(LVmask)
+        
+        if plot_flag:
+            outdir = output_folder / "01_Masks"
+            outdir.mkdir(exist_ok=True)
+            K = len(mask_epi)
+            K_endo = len(mask_endo)
+            for k in range(K):
+                mask_epi_k = mask_epi[k]
+                mask_endo_k = mask_endo[k]
+                LVmask_k = LVmask[k]
+                new_image = utils.image_overlay(LVmask_k, mask_epi_k, mask_endo_k)
+                fnmae = outdir.as_posix() + "/" + str(k) + ".png"
+                plt.imshow(new_image)
+                dpi = np.round((300/resolution)/100)*100
+                plt.savefig(fnmae, dpi=dpi)
+                plt.close()
+        
+        coords_epi = mu.get_coords_from_mask(mask_epi, resolution, slice_thickness)
+        coords_endo = mu.get_coords_from_mask(mask_endo, resolution, slice_thickness)
+    else:
+        coords, P_a_endo, P_a_epi, resolution_data  = read_data_h5(h5_file_address.as_posix())
+        LV_coords_raw = restructure_coords_into_slices(coords, z_tolerance=0.1)
+        LV_coords_raw = average_z_for_slices(LV_coords_raw)
+
+        # Just saving raw data for inspection of the raw coordinates, e.g., if they form a close loop or not
+        if plot_flag:
+            outdir = output_folder / "01_Masks"
+            outdir.mkdir(exist_ok=True)
+            K = len(LV_coords_raw)
+            for k in range(K):
+                LVmask_k = LV_coords_raw[k]
+                fnmae = outdir.as_posix() + "/" + str(k) + ".png"
+                plt.scatter(LVmask_k[:,0], LVmask_k[:,1], s=1)
+                plt.xlim((-50,+50))
+                plt.ylim((-50,+50))
+                plt.grid(True)
+                plt.savefig(fnmae, dpi=300)
+                plt.close()
+
+        resolution = resolution_data[0] * 1.01
+        slice_thickness = resolution_data[2]
+        
+        coords_epi_unsorted, coords_endo_unsorted = get_epi_endo_from_coords(LV_coords_raw, resolution)
+        coords_epi, coords_endo= sort_epi_endo_coords(coords_epi_unsorted, coords_endo_unsorted, resolution)
+        
+        if plot_flag:
+            outdir = output_folder / "01_Masks"
+            outdir.mkdir(exist_ok=True)
+            K = len(coords_epi)
+            K_endo = len(coords_endo)
+            for k in range(K):
+                mask_epi_k = coords_epi[k]
+                mask_endo_k = coords_endo[k]
+                LVmask_k = LV_coords_raw[k]
+                fnmae = outdir.as_posix() + "/" + str(k) + ".png"
+                plt.scatter(LVmask_k[:,0], LVmask_k[:,1], s=1)
+                plt.scatter(mask_epi_k[:,0], mask_epi_k[:,1], s=1, color = 'red')
+                plt.scatter(mask_endo_k[:,0], mask_endo_k[:,1], s=1,color = 'blue')
+                plt.plot(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
+                plt.plot(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
+                plt.xlim((-50,+50))
+                plt.ylim((-50,+50))
+                plt.grid(True)
+                plt.savefig(fnmae, dpi=300)
+                plt.close()
+            fnmae = outdir.as_posix() + "/" + str(k+1) + ".png"
+            plt.scatter(P_a_epi[0], P_a_epi[1], s=1, color = 'red')
+            plt.scatter(P_a_endo[0], P_a_endo[1], s=1, color = 'blue')
             plt.xlim((-50,+50))
             plt.ylim((-50,+50))
             plt.grid(True)
             plt.savefig(fnmae, dpi=300)
             plt.close()
-
-    resolution = resolution_data[0] * 1.01
-    slice_thickness = resolution_data[2]
     
-    coords_epi_unsorted, coords_endo_unsorted = get_epi_endo_from_coords(LV_coords_raw, resolution)
-    coords_epi, coords_endo= sort_epi_endo_coords(coords_epi_unsorted, coords_endo_unsorted, resolution)
-    
-    if plot_flag:
-        outdir = output_folder / "01_Masks"
-        outdir.mkdir(exist_ok=True)
-        K = len(coords_epi)
-        K_endo = len(coords_endo)
-        for k in range(K):
-            mask_epi_k = coords_epi[k]
-            mask_endo_k = coords_endo[k]
-            LVmask_k = LV_coords_raw[k]
-            fnmae = outdir.as_posix() + "/" + str(k) + ".png"
-            plt.scatter(LVmask_k[:,0], LVmask_k[:,1], s=1)
-            plt.scatter(mask_epi_k[:,0], mask_epi_k[:,1], s=1, color = 'red')
-            plt.scatter(mask_endo_k[:,0], mask_endo_k[:,1], s=1,color = 'blue')
-            plt.plot(mask_epi_k[:,0], mask_epi_k[:,1], color = 'red')
-            plt.plot(mask_endo_k[:,0], mask_endo_k[:,1], color = 'blue')
-            plt.xlim((-50,+50))
-            plt.ylim((-50,+50))
-            plt.grid(True)
-            plt.savefig(fnmae, dpi=300)
-            plt.close()
-        fnmae = outdir.as_posix() + "/" + str(k+1) + ".png"
-        plt.scatter(P_a_epi[0], P_a_epi[1], s=1, color = 'red')
-        plt.scatter(P_a_endo[0], P_a_endo[1], s=1, color = 'blue')
-        plt.xlim((-50,+50))
-        plt.ylim((-50,+50))
-        plt.grid(True)
-        plt.savefig(fnmae, dpi=300)
-        plt.close()
-    
-    logger.info(f"Epi and Endo coords are extracted from point clouds")
-    
-    slice_thicknesses = [coords_epi[k][0,2]-coords_epi[k+1][0,2] for k in range(len(coords_epi)-1)]
-    slice_thickness_ave = np.mean(slice_thicknesses)
-    logger.warning(f"Slice thickness is {slice_thickness} while the averaged based on coords is {slice_thickness_ave}")
-    
+        logger.info(f"Epi and Endo coords are extracted from point clouds")
+        
+        slice_thicknesses = [coords_epi[k][0,2]-coords_epi[k+1][0,2] for k in range(len(coords_epi)-1)]
+        slice_thickness_ave = np.mean(slice_thicknesses)
+        logger.warning(f"Slice thickness is {slice_thickness} while the averaged based on coords is {slice_thickness_ave}")
+        
     
     tck_epi = mu.get_shax_from_coords(
         coords_epi, mesh_settings["smooth_level_epi"]
@@ -358,7 +405,10 @@ def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True
 
     apex_threshold = mu.get_apex_threshold(sample_points_epi, sample_points_endo)
     logger.info("Using slice thickness average for lax points")
-    
+    if mask_flag:
+        P_a_epi = None
+        P_a_endo = None
+
     LAX_points_epi, apex_epi = mu.create_lax_points(
         sample_points_epi, apex_threshold, slice_thickness, apex_coord=P_a_epi
     )
@@ -416,8 +466,8 @@ def generate_pc(mesh_settings, sample_directory, output_folder, plot_flag = True
         tck_shax_endo, mesh_settings["seed_num_base_endo"]
     )
     
-    points_cloud_epi.append(P_a_epi)
-    points_cloud_endo.append(P_a_endo)
+    points_cloud_epi.append(apex_epi)
+    points_cloud_endo.append(apex_endo)
     
     if plot_flag:
         outdir = output_folder / "05_Point Cloud"

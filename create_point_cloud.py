@@ -52,6 +52,13 @@ def main(args=None) -> int:
         type=str,
         help="The mesh quality. Settings will be loaded accordingly from json file",
     )
+    
+    # flag for using mask or coords
+    parser.add_argument(
+        "-mask",
+        action="store_true",
+        help="The flag for whether using mask or not",
+    )
 
     parser.add_argument(
         "-o",
@@ -67,12 +74,12 @@ def main(args=None) -> int:
     output_folder = args.output_folder
     settings_dir = args.settings_dir
     mesh_quality = args.mesh_quality
-    
+    mask_flag = args.mask
     settings = load_settings(settings_dir, sample_name)
     mesh_settings = settings["mesh"][mesh_quality]
 
     sample_directory = data_directory / sample_name
-    points_cloud_epi, points_cloud_endo = meshing_utils.generate_pc(mesh_settings, sample_directory, output_folder)
+    points_cloud_epi, points_cloud_endo = meshing_utils.generate_pc(mesh_settings, sample_directory, output_folder, mask_flag)
 
     points_cloud_epi = np.vstack(points_cloud_epi)
     points_cloud_endo = np.vstack(points_cloud_endo)
