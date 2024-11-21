@@ -396,6 +396,11 @@ def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_
             fnmae = outdir.as_posix() + "/" + str(k) + ".png"
             plt.savefig(fnmae)
             plt.close()
+        
+        fig = utils.plotly_3d_base_splines(tck_epi, color = "red")
+        fig = utils.plotly_3d_base_splines(tck_endo, fig=fig, color="blue")
+        fnmae = outdir.as_posix() + "/shax_bsplines.html"
+        fig.write_html(fnmae)
     sample_points_epi = mu.get_sample_points_from_shax(
         tck_epi, mesh_settings["num_lax_points"]
     )
