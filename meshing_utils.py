@@ -461,6 +461,15 @@ def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_
         fig = mu.plotly_3d_contours(
             fig, tck_shax_epi, tck_lax_epi, tck_shax_endo, tck_lax_endo
         )
+        # Adding original coords
+        x = np.concatenate(coords_epi)[:,0]
+        y = np.concatenate(coords_epi)[:,1]
+        z = np.concatenate(coords_epi)[:,2]
+        fig.add_trace(go.Scatter3d(x=x, y=y, z=z, marker=dict(size = 2, color="red")))
+        x = np.concatenate(coords_endo)[:,0]
+        y = np.concatenate(coords_endo)[:,1]
+        z = np.concatenate(coords_endo)[:,2]
+        fig.add_trace(go.Scatter3d(x=x, y=y, z=z, marker=dict(size = 2, color="blue")))
         fnmae = outdir.as_posix() + "/Contour.html"
         fig.write_html(fnmae)
     
