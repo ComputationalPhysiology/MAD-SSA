@@ -1,6 +1,7 @@
 {
     "mesh": {
         "fine": {
+            "mask_is_inverted": true,
             "seed_num_base_epi": 40,
             "seed_num_base_endo": 40,
             "num_z_sections_epi": 20,

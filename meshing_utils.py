@@ -281,10 +281,10 @@ def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_
 
     h5_file_address = located_h5(sample_directory)
     if mask_flag:
-        LVmask_raw_reorderd, resolution_data = read_data_h5_mask(h5_file_address.as_posix())
-        LVmask_raw_inverted = np.transpose(LVmask_raw_reorderd, (2, 0, 1))
-        if mesh_settings["mask_is_inverted"]:
-            LVmask_raw = LVmask_raw_inverted[::-1,:,:]
+        LVmask_raw, resolution_data = read_data_h5_mask(h5_file_address.as_posix())
+        # LVmask_raw_inverted = np.transpose(LVmask_raw_reorderd, (2, 0, 1))
+        # if mesh_settings["mask_is_inverted"]:
+        #     LVmask_raw = LVmask_raw_inverted[::-1,:,:]
         # Filter out the slices where all I x J elements are zero, i.e., empty image
         LVmask_raw = LVmask_raw[~np.all(LVmask_raw == 0, axis=(1, 2))]        
         resolution = resolution_data[0] * 1.01
