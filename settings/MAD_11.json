@@ -1,28 +1,20 @@
 {
     "mesh": {
         "fine": {
+            "mask_is_inverted": true,
             "seed_num_base_epi": 40,
             "seed_num_base_endo": 40,
             "num_z_sections_epi": 20,
             "num_z_sections_endo": 20,
-            "num_mid_layers_base": 7,
             "smooth_level_epi": 0.1,
             "smooth_level_endo": 0.1,
             "num_lax_points": 32,
-            "lax_smooth_level_epi": 20,
-            "lax_smooth_level_endo": 20,
+            "lax_smooth_level_epi": 8,
+            "lax_smooth_level_endo": 2,
             "lax_spline_order_epi": 3,
             "lax_spline_order_endo": 3,
             "z_sections_flag_epi": 0,
-            "z_sections_flag_endo": 0,
-            "seed_num_threshold_epi": 15,
-            "seed_num_threshold_endo": 15,
-            "scale_for_delauny": 1.5,
-            "t_mesh": -1,
-            "MeshSizeMin": 2,
-            "MeshSizeMax": 4,
-            "SurfaceMeshSizeEndo": 3,
-            "SurfaceMeshSizeEpi": 3
+            "z_sections_flag_endo": 0
         }
     }
 }
