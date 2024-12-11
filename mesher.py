@@ -10,12 +10,6 @@ import ventric_mesh.mesh_utils as mu
 
 logger = get_logger()
 
-def load_settings(setting_dir, sample_name):
-    settings_fname = setting_dir / f"{sample_name}.json"
-    with open(settings_fname, "r") as file:
-        settings = json.load(file)
-    return settings
-
 def load_original_data(sample_directory):
     h5_file_address = meshing_utils.located_h5(sample_directory)
     LVmask_raw, resolution_data = meshing_utils.read_data_h5_mask(h5_file_address.as_posix())
@@ -32,6 +26,18 @@ def load_original_data(sample_directory):
     coords_endo = mu.get_coords_from_mask(mask_endo, resolution, slice_thickness)
     
     return coords_epi, coords_endo, resolution
+
+def convert_pc_to_stack(pc, num_z_sections=20):
+    num_points_per_z = int((pc.shape[0] - 1) / num_z_sections)
+    pc_list = []
+    # Create the list of z sections
+    for i in range(num_z_sections):  
+        pc_list.append(pc[i * num_points_per_z:(i + 1) * num_points_per_z])
+
+    # Add the last element with the remaining points 
+    pc_list.append(pc[-1])
+    
+    return pc_list
 
 def main(args=None) -> int:
     """
@@ -57,27 +63,19 @@ def main(args=None) -> int:
     )
     
     parser.add_argument(
-        "--settings_dir",
-        default="/home/shared/MAD-SSA/settings",
-        type=Path,
-        help="The settings directory where json files are stored.",
+        "--SurfaceMeshSizeEpi",
+        default=3,
+        type=float,
+        help="The size of generated surface mesh on epi surface",
     )
     
     parser.add_argument(
-        "-m",
-        "--mesh_quality",
-        default='fine',
-        type=str,
-        help="The mesh quality. Settings will be loaded accordingly from json file",
+        "--SurfaceMeshSizeEndo",
+        default=3,
+        type=float,
+        help="The size of generated surface mesh on endo surface",
     )
     
-    # flag for using mask or coords
-    parser.add_argument(
-        "-mask",
-        action="store_true",
-        help="The flag for whether using mask or not",
-    )
-
     parser.add_argument(
         "-o",
         "--output_folder",
@@ -90,52 +88,21 @@ def main(args=None) -> int:
     sample_name = args.name
     data_directory = args.data_directory
     output_folder = args.output_folder
-    settings_dir = args.settings_dir
-    mesh_quality = args.mesh_quality
-    mask_flag = args.mask
-    settings = load_settings(settings_dir, sample_name)
-    mesh_settings = settings["mesh"][mesh_quality]
+    SurfaceMeshSizeEndo = args.SurfaceMeshSizeEndo
+    SurfaceMeshSizeEpi = args.SurfaceMeshSizeEpi
 
     sample_directory = data_directory / sample_name
-    points_cloud_epi, points_cloud_endo = meshing_utils.generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_flag=False)
-    mesh_epi_fname, mesh_endo_fname, mesh_base_fname = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, sample_directory, output_folder)
-
-        
-    all_errors = np.concatenate([errors_epi, errors_endo])
-    xlim = (np.min(all_errors), np.max(all_errors))
-    hist_epi, _ = np.histogram(errors_epi, bins=30)
-    hist_endo, _ = np.histogram(errors_endo, bins=30)
-    max_y = max(np.max(hist_epi), np.max(hist_endo))
-    ylim = (0, max_y + max_y * 0.1)  # Add 10% padding for aesthetics
-
-    fname_epi = outdir / "Epi_mesh_errors.png"
-    fname_endo = outdir / "Endo_mesh_errors.png"
-
-    utils.plot_error_histogram(
-        errors=errors_epi,
-        fname=fname_epi,
-        color='red',
-        xlim=xlim,
-        ylim=ylim,
-        title_prefix='Epi', 
-        resolution=resolution
-    )
-
-    utils.plot_error_histogram(
-        errors=errors_endo,
-        fname=fname_endo,
-        color='blue',
-        xlim=xlim,
-        ylim=ylim,
-        title_prefix='Endo', 
-        resolution=resolution
-    )
-    fname_epi = fname_epi.as_posix()[:-4] + ".txt"
-    utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium", resolution=resolution)
-    fname_endo = fname_endo.as_posix()[:-4] + ".txt"
-    utils.save_error_distribution_report(errors_endo, fname_endo, n_bins=10,  surface_name="Endocardium", resolution=resolution)
+    coords_epi, coords_endo, resolution = load_original_data(sample_directory)
     
-
+   # Load the saved point cloud data
+    outdir = sample_directory / output_folder
+    points_cloud_epi = np.loadtxt(outdir / 'points_cloud_epi.csv', delimiter=',')
+    points_cloud_endo = np.loadtxt(outdir / 'points_cloud_endo.csv', delimiter=',')
+    points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
+    points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
+    mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi)
+    errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
+    meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
     
 if __name__ == "__main__":
     main()
