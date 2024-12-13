@@ -77,6 +77,21 @@ def main(args=None) -> int:
     )
     
     parser.add_argument(
+        "--VolumeMeshSizeMin",
+        default=5,
+        type=float,
+        help="The minimum size of generated volumetric (3D) mesh",
+    )
+    
+    
+    parser.add_argument(
+        "--VolumeMeshSizeMax",
+        default=10,
+        type=float,
+        help="The minimum size of generated volumetric (3D) mesh",
+    )
+    
+    parser.add_argument(
         "-o",
         "--output_folder",
         default="00_results",
@@ -90,6 +105,8 @@ def main(args=None) -> int:
     output_folder = args.output_folder
     SurfaceMeshSizeEndo = args.SurfaceMeshSizeEndo
     SurfaceMeshSizeEpi = args.SurfaceMeshSizeEpi
+    VolumeMeshSizeMin = args.VolumeMeshSizeMin
+    VolumeMeshSizeMax = args.VolumeMeshSizeMax
 
     sample_directory = data_directory / sample_name
     coords_epi, coords_endo, resolution = load_original_data(sample_directory)
@@ -100,7 +117,7 @@ def main(args=None) -> int:
     points_cloud_endo = np.loadtxt(outdir / 'points_cloud_endo.csv', delimiter=',')
     points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
     points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
-    mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi)
+    mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
     errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
     meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
     

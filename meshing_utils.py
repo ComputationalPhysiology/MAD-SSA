@@ -508,6 +508,8 @@ def generate_3d_mesh(
     k_apex_epi=18,
     SurfaceMeshSizeEpi=5,
     SurfaceMeshSizeEndo=5,
+    MeshSizeMin=5,
+    MeshSizeMax=10,
     num_mid_layers_base=3):
     # Calculate normals
     normals_list_endo = mu.calculate_normals(points_cloud_endo, k_apex_endo)
@@ -528,7 +530,7 @@ def generate_3d_mesh(
         result_folder=outdir.as_posix() + "/",
     )
     output_mesh_filename = outdir / 'Mesh_3D.msh'
-    mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=5, MeshSizeMax=10)
+    mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=MeshSizeMin, MeshSizeMax=MeshSizeMax)
     
     return mesh_epi_filename, mesh_endo_filename, mesh_base_filename
 
