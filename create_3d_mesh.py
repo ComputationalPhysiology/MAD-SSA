@@ -91,6 +91,20 @@ def main(args=None) -> int:
         help="The minimum size of generated volumetric (3D) mesh",
     )
     
+    # flag for processing modes
+    parser.add_argument(
+        "-m",
+        action="store_true",
+        help="The flag for whether using mode data or not",
+    )
+    
+    parser.add_argument(
+        "--mode_folder",
+        default="modes",
+        type=str,
+        help="The folder containing mode data coordinates.",
+    )
+    
     parser.add_argument(
         "-o",
         "--output_folder",
@@ -103,26 +117,48 @@ def main(args=None) -> int:
     sample_name = args.name
     data_directory = args.data_directory
     output_folder = args.output_folder
+    mode_flag = args.m
+    mode_folder = args.mode_folder
     SurfaceMeshSizeEndo = args.SurfaceMeshSizeEndo
     SurfaceMeshSizeEpi = args.SurfaceMeshSizeEpi
     VolumeMeshSizeMin = args.VolumeMeshSizeMin
     VolumeMeshSizeMax = args.VolumeMeshSizeMax
 
-    sample_directory = data_directory / sample_name
-    # Load raw data from mask and resolution
-    coords_epi, coords_endo, resolution = load_original_data(sample_directory)
-   # Load the saved point cloud data
-    outdir = sample_directory / output_folder
-    points_cloud_epi = np.loadtxt(outdir / 'points_cloud_epi.csv', delimiter=',')
-    points_cloud_endo = np.loadtxt(outdir / 'points_cloud_endo.csv', delimiter=',')
-    # Convering the np.array to list of np.array with number of z setions (slices)
-    points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
-    points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
-    # Creating 3D and surface meshes of epi, endo and base
-    mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
-    # calculating the error between raw data and surfaces meshes of epi and endo
-    errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
-    meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
+    if mode_flag:
+        sample_directory = data_directory / mode_folder
+        modes = sorted(sample_directory.glob("*.txt"))
+        for mode in modes:
+            # Load the saved point cloud data
+            mode_pc = np.loadtxt(mode.as_posix(), delimiter=',')
+            points_cloud_epi = mode_pc[:800]
+            points_cloud_endo = mode_pc[800:]
+            # Convering the np.array to list of np.array with number of z setions (slices)
+            points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
+            points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
+            # Creating 3D and surface meshes of epi, endo and base
+            outdir = mode.parent / f"00_results_{mode.stem}"
+            outdir.mkdir(exist_ok=True)
+            mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
+            # calculating the error between raw data and surfaces meshes of epi and endo
+            resolution = 0
+            errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, points_cloud_epi[:-1], points_cloud_endo[:-1], outdir, resolution)
+            meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
+    else:
+        sample_directory = data_directory / sample_name
+        # Load raw data from mask and resolution
+        coords_epi, coords_endo, resolution = load_original_data(sample_directory)
+        # Load the saved point cloud data
+        outdir = sample_directory / output_folder
+        points_cloud_epi = np.loadtxt(outdir / 'points_cloud_epi.csv', delimiter=',')
+        points_cloud_endo = np.loadtxt(outdir / 'points_cloud_endo.csv', delimiter=',')
+        # Convering the np.array to list of np.array with number of z setions (slices)
+        points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
+        points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
+        # Creating 3D and surface meshes of epi, endo and base
+        mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
+        # calculating the error between raw data and surfaces meshes of epi and endo
+        errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
+        meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
     
 if __name__ == "__main__":
     main()
