@@ -99,6 +99,14 @@ def main(args=None) -> int:
     )
     
     parser.add_argument(
+        "--mode_numbers",
+        nargs="+",
+        type=int,
+        default=1,
+        help="The flag for whether using mode data or not",
+    )
+    
+    parser.add_argument(
         "--mode_folder",
         default="modes",
         type=str,
@@ -119,6 +127,7 @@ def main(args=None) -> int:
     output_folder = args.output_folder
     mode_flag = args.m
     mode_folder = args.mode_folder
+    mode_numbers = args.mode_numbers
     SurfaceMeshSizeEndo = args.SurfaceMeshSizeEndo
     SurfaceMeshSizeEpi = args.SurfaceMeshSizeEpi
     VolumeMeshSizeMin = args.VolumeMeshSizeMin
@@ -127,7 +136,11 @@ def main(args=None) -> int:
     if mode_flag:
         sample_directory = data_directory / mode_folder
         modes = sorted(sample_directory.glob("*.txt"))
-        for mode in modes:
+        # the name of mode_numbers is misleading here we deal each file as a mode which is not correct!
+        selected_modes = [modes[i - 1] for i in mode_numbers]
+        for mode in selected_modes:
+            logger.info(f"Mode {mode.stem} is being analysed ...")
+            logger.info(f"--------------------------------------")
             # Load the saved point cloud data
             mode_pc = np.loadtxt(mode.as_posix(), delimiter=',')
             points_cloud_epi = mode_pc[:800]
