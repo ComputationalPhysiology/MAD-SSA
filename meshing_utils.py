@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import cv2 as cv
 from tqdm import tqdm
 import open3d as o3d
+import meshio
 
 import ventric_mesh.mesh_utils as mu
 import ventric_mesh.utils as utils
@@ -531,6 +532,11 @@ def generate_3d_mesh(
     )
     output_mesh_filename = outdir / 'Mesh_3D.msh'
     mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=MeshSizeMin, MeshSizeMax=MeshSizeMax)
+    
+    # Read the .msh file and write to the vtk format
+    mesh = meshio.read(output_mesh_filename)
+    output_mesh_filename_vtk = outdir / 'Mesh_3D.vtk'
+    meshio.write(output_mesh_filename_vtk, mesh)
     
     return mesh_epi_filename, mesh_endo_filename, mesh_base_filename
 
