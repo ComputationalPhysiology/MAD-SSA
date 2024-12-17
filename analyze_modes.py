@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from scipy import stats
 import os
 CLINICAL_DATA_XL = "../ClinicalData_OUS_MADPatients_EIVIND_29_4_2021.xlsx"
-PCA_SCORES_CSV = "./PCA_Results_height/pca_scores.csv"
+PCA_SCORES_CSV = "./PCA_Results_final_height/pca_scores.csv"
 NUM_MODES = 7
 ANALYSIS_MODES = [f"M{i}" for i in range(1, NUM_MODES + 1)]
 
@@ -44,6 +44,7 @@ def annotate_p_values(ax, p_values, y_pos=3, color="black"):
 
 
 clinical_data = load_patient_data(CLINICAL_DATA_XL)
+
 pca_scores = load_pca_scores(PCA_SCORES_CSV)
 
 if clinical_data is not None and pca_scores is not None:
@@ -57,6 +58,7 @@ if clinical_data is not None and pca_scores is not None:
 
     
     pca_clinical = pca_scores.merge(clinical_data, on="Pat_no")
+    
     pca_clinical_event = pca_clinical[pca_clinical["arrhythmic_composite"]]
     pca_clinical_noevent = pca_clinical[~pca_clinical["any_arrhythmia"]]
     
@@ -104,45 +106,45 @@ if clinical_data is not None and pca_scores is not None:
     ax.legend(title="Arrhythmic Composite", loc="lower center")
 
     plt.tight_layout()
-    if not os.path.exists("./PCA_Results_height/figures"):
-        os.makedirs("./PCA_Results_height/figures")
-    plt.savefig("./PCA_Results_height/figures/arrhythmia_mode_comparison.png")
+    if not os.path.exists("./PCA_Results_final_height/figures"):
+        os.makedirs("./PCA_Results_final_height/figures")
+    plt.savefig("./PCA_Results_final_height/figures/arrhythmia_mode_comparison.png")
     plt.show()
 
 
 
 
 ################# ILR ####################
-loopdata = clinical_data.merge(pca_scores, on = "Pat_no").query("ILR_y_n == 1")
-nol =clinical_data.merge(pca_scores, on = "Pat_no").query("ILR_y_n == 0")
+# loopdata = clinical_data.merge(pca_scores, on = "Pat_no").query("ILR_y_n == 1")
+# nol =clinical_data.merge(pca_scores, on = "Pat_no").query("ILR_y_n == 0")
 
-loopdata["loop_nsVT"] = loopdata["NSVT_count"] > 0
-loop_nsVT = loopdata.loc[loopdata["loop_nsVT"]]
-loop_nonsVT = loopdata.loc[~loopdata["loop_nsVT"]]
+# loopdata["loop_nsVT"] = loopdata["NSVT_count"] > 0
+# loop_nsVT = loopdata.loc[loopdata["loop_nsVT"]]
+# loop_nonsVT = loopdata.loc[~loopdata["loop_nsVT"]]
 
-manu_stats_loop = [stats.mannwhitneyu(loop_nsVT[M], loop_nonsVT[M])[1] for M in ANALYSIS_MODES]
-df_ilr = pd.DataFrame([manu_stats_loop], columns = ANALYSIS_MODES, index = ["p-value"])
+# manu_stats_loop = [stats.mannwhitneyu(loop_nsVT[M], loop_nonsVT[M])[1] for M in ANALYSIS_MODES]
+# df_ilr = pd.DataFrame([manu_stats_loop], columns = ANALYSIS_MODES, index = ["p-value"])
  # Plotting
-plt.rcParams.update({"font.size": 14})
-fig, ax = plt.subplots(figsize=(12, 6))
-sns.boxplot(
-    data=clinical_data_pca_stacked,
-    x="mode",
-    y="score",
-    hue="arrhythmic_composite",
-    ax=ax,
-    palette="Set2",
-)
+# plt.rcParams.update({"font.size": 14})
+# fig, ax = plt.subplots(figsize=(12, 6))
+# sns.boxplot(
+#     data=clinical_data_pca_stacked,
+#     x="mode",
+#     y="score",
+#     hue="arrhythmic_composite",
+#     ax=ax,
+#     palette="Set2",
+# )
 
 
-ax.set_ylim(-3, 5)
-annotate_p_values(ax, manu_stats_loop, y_pos=4)
-ax.set_xlabel("Patient Mode Score (Standardized)")
-ax.set_ylabel("PCA Score")
-ax.legend(title="ILR", loc="lower center")
+# ax.set_ylim(-3, 5)
+# annotate_p_values(ax, manu_stats_loop, y_pos=4)
+# ax.set_xlabel("Patient Mode Score (Standardized)")
+# ax.set_ylabel("PCA Score")
+# ax.legend(title="ILR", loc="lower center")
 
-plt.tight_layout()
-if not os.path.exists("./PCA_Results_height/figures"):
-    os.makedirs("./PCA_Results_height/figures")
-plt.savefig("./PCA_Results_height/figures/arrhythmia_mode_ilr.png")
-plt.show()
+# plt.tight_layout()
+# # if not os.path.exists("./PCA_Results_final_height/figures"):
+# #     os.makedirs("./PCA_Results_final_height/figures")
+# # plt.savefig("./PCA_Results_final_height/figures/arrhythmia_mode_ilr.png")
+# plt.show()

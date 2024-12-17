@@ -17,8 +17,6 @@ def compute_heat_map(deformation):
 
 def plot_heat_map(magnitudes, avg_coords, output_path):
     x, y, z = avg_coords[:, 0], avg_coords[:, 1], avg_coords[:, 2]
-
-    # Create a 3D scatter plot with magnitudes as color
     fig = go.Figure()
 
     fig.add_trace(go.Scatter3d(
@@ -26,8 +24,8 @@ def plot_heat_map(magnitudes, avg_coords, output_path):
         mode='markers',
         marker=dict(
             size=4,
-            color=magnitudes,  # Set color to deformation magnitudes
-            colorscale='Hot',  # Use 'Hot' colorscale
+            color=magnitudes, 
+            colorscale='Hot',  
             colorbar=dict(title='Deformation Magnitude')
         ),
         name='Shape Variation Heat Map'
@@ -68,7 +66,6 @@ def plot_deformation_field(deformation, avg_coords, output_path):
     x, y, z = avg_coords[:, 0], avg_coords[:, 1], avg_coords[:, 2]
     u, v, w = deformation[:, 0], deformation[:, 1], deformation[:, 2]
 
-    # Create a 3D scatter plot for the average coordinates
     fig = go.Figure()
 
     fig.add_trace(go.Scatter3d(
@@ -78,7 +75,6 @@ def plot_deformation_field(deformation, avg_coords, output_path):
         name='Average Coordinates'
     ))
 
-    # Add quiver (arrows) for deformation field
     for xi, yi, zi, ui, vi, wi in zip(x, y, z, u, v, w):
         fig.add_trace(go.Scatter3d(
             x=[xi, xi + ui], y=[yi, yi + vi], z=[zi, zi + wi],
@@ -87,7 +83,7 @@ def plot_deformation_field(deformation, avg_coords, output_path):
             name='Deformation Vector'
         ))
 
-    # Update layout for better visualization
+
     fig.update_layout(
         scene=dict(
             xaxis_title='X',
@@ -114,7 +110,7 @@ def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale
     # Scale the mode by its standard deviation
     plus_coords = avg_coords + scale * std_dev * mode_vector
     minus_coords = avg_coords - scale * std_dev * mode_vector
-
+    
     # Calculate the overall size of the point cloud in the "+" and "-" directions
     var_plus = np.sum(plus_coords.std(axis=0))
     var_minus = np.sum(minus_coords.std(axis=0))
@@ -143,16 +139,14 @@ def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale
 
     # Set the same scale for all the subplots and add titles
     fig.update_layout(
-        # scene = dict(xaxis=dict(range=x_range), yaxis=dict(range=y_range), zaxis=dict(range=z_range)),
-        # scene2 = dict(xaxis=dict(range=x_range), yaxis=dict(range=y_range), zaxis=dict(range=z_range)),
-        # scene3 = dict(xaxis=dict(range=x_range), yaxis=dict(range=y_range), zaxis=dict(range=z_range)),
+        
         annotations=[
             dict(text="Mode + (Scaled by STD)", x=0.18, y=0.95, showarrow=False, font=dict(size=14)),
             dict(text="Average Mode", x=0.5, y=0.95, showarrow=False, font=dict(size=14)),
             dict(text="Mode - (Scaled by STD)", x=0.82, y=0.95, showarrow=False, font=dict(size=14))
         ]
     )
-    # Save plot as HTML
+
     fig.write_html(output_path)
 
 def visualize_modes_with_vector(avg_coords, mode_vector, std_dev, output_path, scale=2.0):
@@ -162,12 +156,7 @@ def visualize_modes_with_vector(avg_coords, mode_vector, std_dev, output_path, s
     plus_coords = avg_coords + scale * std_dev * mode_vector
     minus_coords = avg_coords - scale * std_dev * mode_vector
 
-    # # Compute the main variation vector (centroid-based)
-    # vector_start = avg_coords.mean(axis=0)
-    # vector_end = vector_start + scale * std_dev * mode_vector.mean(axis=0)
-    # vector_coords = np.array([vector_start, vector_end])
 
-    # Initialize the plot
     fig = go.Figure()
 
     # "+" Mode trace
@@ -194,30 +183,6 @@ def visualize_modes_with_vector(avg_coords, mode_vector, std_dev, output_path, s
         name='Mode - (Scaled by STD)'
     ))
 
-    # # Variation vector trace (with arrowhead simulation)
-    # fig.add_trace(go.Scatter3d(
-    #     x=vector_coords[:, 0], y=vector_coords[:, 1], z=vector_coords[:, 2],
-    #     mode='lines+markers',
-    #     line=dict(color='black', width=5),
-    #     marker=dict(size=5, color='orange', symbol='circle'),
-    #     name='Main Variation Vector'
-    # ))
-
-    # # Adding reference planes for context
-    # fig.add_trace(go.Scatter3d(
-    #     x=[vector_start[0]], y=[vector_start[1]], z=[vector_start[2]],
-    #     mode='markers',
-    #     marker=dict(size=6, color='yellow', symbol='cross'),
-    #     name='Vector Start'
-    # ))
-    # fig.add_trace(go.Scatter3d(
-    #     x=[vector_end[0]], y=[vector_end[1]], z=[vector_end[2]],
-    #     mode='markers',
-    #     marker=dict(size=6, color='red', symbol='x'),
-    #     name='Vector End'
-    # ))
-
-    # Update layout for better visualization
     fig.update_layout(
         scene=dict(
             xaxis_title='X',
@@ -283,9 +248,9 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
         file_path = os.path.join(input_dir, f"MAD_{case}_aligned_points.txt")
         try:
             point_cloud = np.loadtxt(file_path, delimiter=",")
-            # height = get_patient_height(int(case))
+            height = get_patient_height(int(case))
             # point_cloud[:, 2] /= height 
-            point_coords.append(point_cloud)
+            point_coords.append(point_cloud/height)
 
         except Exception as e:
             print(f"Skipping case {case} due to error: {e}")
@@ -325,7 +290,12 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
     )
     var_ratios_df.index.rename("Mode", inplace=True)
     var_ratios_df.to_csv(os.path.join(output_dir, "pca_variance_ratios.csv"))
-    
+    outdir_point_clouds = os.path.join(output_dir, "point_clouds")
+    os.makedirs(outdir_point_clouds, exist_ok=True)
+
+    avg_coords_path = os.path.join(outdir_point_clouds, "avg_coords.txt")
+    np.savetxt(avg_coords_path, avg_coords, delimiter=",")
+    print(f"Average coordinates saved to {avg_coords_path}")
     # Visualize PCA Modes
     for i, (mode, std_dev) in enumerate(zip(pca.components_[:10], std_devs), start=1):  # First 10 modes
         mode_coords = mode.reshape(cshape[1], cshape[2], order="C")
@@ -333,6 +303,18 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
         output_path2 = os.path.join(outdir_modes, f"mode_{i}_comparison.html")
         output_path3 = os.path.join(outdir_modes, f"mode_{i}_deformation.html")
         output_path4 = os.path.join(outdir_modes, f"mode_{i}_heat_map.html")
+
+
+        plus_coords = avg_coords + scale * std_dev * mode_coords
+        minus_coords = avg_coords - scale * std_dev * mode_coords
+
+        # Save point clouds
+        plus_path = os.path.join(outdir_point_clouds, f"mode_{i}_plus_coords.txt")
+        minus_path = os.path.join(outdir_point_clouds, f"mode_{i}_minus_coords.txt")
+        np.savetxt(plus_path, plus_coords, delimiter=",")
+        np.savetxt(minus_path, minus_coords, delimiter=",")
+        print(f"Mode {i}: plus_coords saved to {plus_path}, minus_coords saved to {minus_path}")
+
         visualize_mode_with_std(mode_coords, avg_coords, std_dev, output_path, scale)
         visualize_modes_with_vector(avg_coords, mode_coords, std_dev, output_path2, scale)
         deformation = compute_deformation_field(avg_coords, mode_coords, std_dev)
@@ -344,7 +326,7 @@ if __name__ == "__main__":
     input_directory = "./Aligned_Models"
     cases = [c.split("_")[1] for c in os.listdir(input_directory) if c.endswith("_aligned_points.txt")]
     
-    output_directory = "./PCA_Results"
+    output_directory = "./PCA_Results_final_height"
     os.makedirs(output_directory, exist_ok=True)
     pca_decomp(cases, input_directory, output_directory, scale=2.0)
 
