@@ -177,11 +177,10 @@ def main(args=None) -> int:
         points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
         if delauny_flag:
             # Creating surface meshes based on delauny triangulation
-            mesh_epi_filename, mesh_endo_filename = meshing_utils.generate_mesh_delauny(points_cloud_epi, points_cloud_endo, outdir) 
+            mesh_epi_fname, mesh_endo_fname = meshing_utils.generate_mesh_delauny(points_cloud_epi, points_cloud_endo, outdir) 
         else:
             # Creating 3D and surface meshes of epi, endo and base
             mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
-        breakpoint()
         # calculating the error between raw data and surfaces meshes of epi and endo
         errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
         meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
