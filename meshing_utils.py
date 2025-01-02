@@ -540,6 +540,40 @@ def generate_3d_mesh(
     
     return mesh_epi_filename, mesh_endo_filename, mesh_base_filename
 
+def create_mesh_slice_by_slice(point_cloud, scale=1.5):
+    vertices = []
+    faces = []
+    points_cloud_aligned = mu.align_points(point_cloud)
+    num_shax = len(points_cloud_aligned) - 2
+    for k in range(num_shax):
+        slice1 = np.array(points_cloud_aligned[k])
+        slice2 = np.array(points_cloud_aligned[k + 1])
+        slice_faces = mu.create_slice_mesh(slice1, slice2, scale)
+        faces_offset = sum(map(len, vertices))
+        faces.append(slice_faces + faces_offset)
+        vertices.append(point_cloud[k])
+    faces = np.vstack(faces)
+    return np.vstack(point_cloud), faces
+
+def generate_mesh_delauny(
+    points_cloud_epi, 
+    points_cloud_endo, 
+    outdir,
+    ):
+    outdir = outdir / "06_Mesh"
+    outdir.mkdir(exist_ok=True)
+    vertices_epi, faces_epi = create_mesh_slice_by_slice(points_cloud_epi, scale=1.5)
+    vertices_endo, faces_endo = create_mesh_slice_by_slice(points_cloud_endo, scale=1.5)
+    
+    mesh_epi = mu.create_mesh(vertices_epi, faces_epi)
+    mesh_epi_filename = outdir / 'Mesh_epi.stl'
+    mesh_epi.save(mesh_epi_filename)
+    mesh_endo = mu.create_mesh(vertices_endo, faces_endo)
+    mesh_endo_filename = outdir / 'Mesh_endo.stl'
+    mesh_endo.save(mesh_endo_filename)
+    
+    return mesh_epi_filename, mesh_endo_filename
+
 def calculate_mesh_error(mesh_epi_filename, mesh_endo_filename, coords_epi, coords_endo, outdir, resolution):
     fig = utils.plot_coords_and_mesh(coords_epi, coords_endo, mesh_epi_filename, mesh_endo_filename)
     fname = outdir.as_posix() + "/Mesh_vs_Coords.html"
