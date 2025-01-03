@@ -531,23 +531,31 @@ def generate_3d_mesh(
         result_folder=outdir.as_posix() + "/",
     )
     output_mesh_filename = outdir / 'Mesh_3D.msh'
-    mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=MeshSizeMin, MeshSizeMax=MeshSizeMax)
     
-    # Read the .msh file and write to the vtk format
-    mesh = meshio.read(output_mesh_filename)
-    output_mesh_filename_vtk = outdir / 'Mesh_3D.vtk'
-    meshio.write(output_mesh_filename_vtk, mesh)
+    try:
+        mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=MeshSizeMin, MeshSizeMax=MeshSizeMax)
+        
+        # Read the .msh file and write to the vtk format
+        mesh = meshio.read(output_mesh_filename)
+        output_mesh_filename_vtk = outdir / 'Mesh_3D.vtk'
+        meshio.write(output_mesh_filename_vtk, mesh)
+    except Exception as e:
+        error_str = str(e)
+        if "No elements in volume 1" in error_str: 
+            logger.error("3D volumetric mesh generated, if needed try to check base and apex")
+        else:
+            # If it’s some other exception, re-raise so we don’t mask a different issue
+            raise        
     
     return mesh_epi_filename, mesh_endo_filename, mesh_base_filename
 
 def create_mesh_slice_by_slice(point_cloud, scale=1.5):
     vertices = []
     faces = []
-    points_cloud_aligned = mu.align_points(point_cloud)
-    num_shax = len(points_cloud_aligned) - 2
+    num_shax = len(point_cloud) - 2
     for k in range(num_shax):
-        slice1 = np.array(points_cloud_aligned[k])
-        slice2 = np.array(points_cloud_aligned[k + 1])
+        slice1 = np.array(point_cloud[k])
+        slice2 = np.array(point_cloud[k + 1])
         slice_faces = mu.create_slice_mesh(slice1, slice2, scale)
         faces_offset = sum(map(len, vertices))
         faces.append(slice_faces + faces_offset)
