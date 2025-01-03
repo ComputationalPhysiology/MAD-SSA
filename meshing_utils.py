@@ -552,11 +552,10 @@ def generate_3d_mesh(
 def create_mesh_slice_by_slice(point_cloud, scale=1.5):
     vertices = []
     faces = []
-    points_cloud_aligned = mu.align_points(point_cloud)
-    num_shax = len(points_cloud_aligned) - 2
+    num_shax = len(point_cloud) - 2
     for k in range(num_shax):
-        slice1 = np.array(points_cloud_aligned[k])
-        slice2 = np.array(points_cloud_aligned[k + 1])
+        slice1 = np.array(point_cloud[k])
+        slice2 = np.array(point_cloud[k + 1])
         slice_faces = mu.create_slice_mesh(slice1, slice2, scale)
         faces_offset = sum(map(len, vertices))
         faces.append(slice_faces + faces_offset)
