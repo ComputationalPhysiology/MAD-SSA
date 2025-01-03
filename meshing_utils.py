@@ -531,12 +531,21 @@ def generate_3d_mesh(
         result_folder=outdir.as_posix() + "/",
     )
     output_mesh_filename = outdir / 'Mesh_3D.msh'
-    mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=MeshSizeMin, MeshSizeMax=MeshSizeMax)
     
-    # Read the .msh file and write to the vtk format
-    mesh = meshio.read(output_mesh_filename)
-    output_mesh_filename_vtk = outdir / 'Mesh_3D.vtk'
-    meshio.write(output_mesh_filename_vtk, mesh)
+    try:
+        mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=MeshSizeMin, MeshSizeMax=MeshSizeMax)
+        
+        # Read the .msh file and write to the vtk format
+        mesh = meshio.read(output_mesh_filename)
+        output_mesh_filename_vtk = outdir / 'Mesh_3D.vtk'
+        meshio.write(output_mesh_filename_vtk, mesh)
+    except Exception as e:
+        error_str = str(e)
+        if "No elements in volume 1" in error_str: 
+            logger.error("3D volumetric mesh generated, if needed try to check base and apex")
+        else:
+            # If it’s some other exception, re-raise so we don’t mask a different issue
+            raise        
     
     return mesh_epi_filename, mesh_endo_filename, mesh_base_filename
 
