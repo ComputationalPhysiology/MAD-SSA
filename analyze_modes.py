@@ -7,7 +7,7 @@ from scipy import stats
 import os
 CLINICAL_DATA_XL = "../ClinicalData_OUS_MADPatients_EIVIND_29_4_2021.xlsx"
 PCA_SCORES_CSV = "./PCA_Results_final_height/pca_scores.csv"
-NUM_MODES = 7
+NUM_MODES = 10
 ANALYSIS_MODES = [f"M{i}" for i in range(1, NUM_MODES + 1)]
 
 
@@ -103,12 +103,12 @@ if clinical_data is not None and pca_scores is not None:
     annotate_p_values(ax, mann_whitney_p_values, y_pos=4)
     ax.set_xlabel("Patient Mode Score (Standardized)")
     ax.set_ylabel("PCA Score")
-    ax.legend(title="Arrhythmic Composite", loc="lower center")
+    # ax.legend(title="Arrhythmic Composite", loc="lower center")
 
     plt.tight_layout()
     if not os.path.exists("./PCA_Results_final_height/figures"):
         os.makedirs("./PCA_Results_final_height/figures")
-    plt.savefig("./PCA_Results_final_height/figures/arrhythmia_mode_comparison.png")
+    plt.savefig("./PCA_Results_final_height/figures/arrhythmia_mode_comparison.svg")
     plt.show()
 
 
