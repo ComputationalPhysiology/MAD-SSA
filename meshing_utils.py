@@ -7,7 +7,7 @@ import cv2 as cv
 from tqdm import tqdm
 import open3d as o3d
 import meshio
-
+import pandas as pd
 import ventric_mesh.mesh_utils as mu
 import ventric_mesh.utils as utils
 import matplotlib.pyplot as plt
@@ -568,7 +568,7 @@ def generate_mesh_delauny(
     points_cloud_endo, 
     outdir,
     ):
-    outdir = outdir / "06_Mesh"
+    outdir = outdir / "06_Mesh_delauny"
     outdir.mkdir(exist_ok=True)
     vertices_epi, faces_epi = create_mesh_slice_by_slice(points_cloud_epi, scale=1.5)
     vertices_endo, faces_endo = create_mesh_slice_by_slice(points_cloud_endo, scale=1.5)
@@ -632,4 +632,35 @@ def export_error_stats(errors_epi, errors_endo, outdir, resolution):
     utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium", resolution=resolution)
     fname_endo = fname_endo.as_posix()[:-4] + ".txt"
     utils.save_error_distribution_report(errors_endo, fname_endo, n_bins=10,  surface_name="Endocardium", resolution=resolution)
+
+def save_errors_to_dataframe(csv_file, sample_name, errors_epi, errors_endo, resolution):
+    """
+    Save or append errors to a CSV file using pandas for easier manipulation later.
+    
+    Args:
+        csv_file (str or Path): Path to the CSV file.
+        sample_name (str): Name of the current sample.
+        errors_epi (array-like): Array of errors for the epicardial surface.
+        errors_endo (array-like): Array of errors for the endocardial surface.
+        resolution (float): Resolution to normalize the errors.
+    """
+    # Prepare data as a DataFrame
+    data = {
+        "Case Name": [sample_name],
+        "Mean Epi Error": [np.mean(errors_epi) / resolution],
+        "Mean Endo Error": [np.mean(errors_endo) / resolution],
+        "Std Epi Error": [np.std(errors_epi) / resolution],
+        "Std Endo Error": [np.std(errors_endo) / resolution],
+    }
+    df = pd.DataFrame(data)
+
+    # Append to the file or create a new one
+    try:
+        if not csv_file.exists():
+            df.to_csv(csv_file, index=False)
+        else:
+            df.to_csv(csv_file, mode='a', header=False, index=False)
+        print(f"Data successfully saved to {csv_file}")
+    except Exception as e:
+        print(f"Error saving data to {csv_file}: {e}")
     

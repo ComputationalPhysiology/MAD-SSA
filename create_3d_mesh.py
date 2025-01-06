@@ -184,6 +184,7 @@ def main(args=None) -> int:
         # calculating the error between raw data and surfaces meshes of epi and endo
         errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
         meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
-    
+        csv_file = Path(data_directory,"errors_summary_d.csv")
+        meshing_utils.save_errors_to_dataframe(csv_file, sample_name, errors_epi, errors_endo, resolution)
 if __name__ == "__main__":
     main()

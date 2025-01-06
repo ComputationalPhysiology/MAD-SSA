@@ -1,0 +1,14 @@
+======= Mesh Statistics =======
+Endocardium with image resolution of 0
+Original coords vs surface mesh error distribution report:
+-------------------------------
+0.0006 ≤ error < 0.0742 :        278 instances ( 35.64%), cumulative:  35.64%
+0.0742 ≤ error < 0.1479 :        291 instances ( 37.31%), cumulative:  72.95%
+0.1479 ≤ error < 0.2215 :        148 instances ( 18.97%), cumulative:  91.92%
+0.2215 ≤ error < 0.2952 :         34 instances (  4.36%), cumulative:  96.28%
+0.2952 ≤ error < 0.3688 :          9 instances (  1.15%), cumulative:  97.44%
+0.3688 ≤ error < 0.4425 :          5 instances (  0.64%), cumulative:  98.08%
+0.4425 ≤ error < 0.5162 :          4 instances (  0.51%), cumulative:  98.59%
+0.5162 ≤ error < 0.5898 :          5 instances (  0.64%), cumulative:  99.23%
+0.5898 ≤ error < 0.6635 :          3 instances (  0.38%), cumulative:  99.62%
+0.6635 ≤ error < 0.7371 :          3 instances (  0.38%), cumulative: 100.00%

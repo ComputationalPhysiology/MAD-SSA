@@ -1,0 +1,7 @@
+======= Surface Mesh Statistics =======
+Triangles: 1922
+Average Aspect Ratio: 1.299
+Standard Deviation of Aspect Ratios: 0.226
+Number of Triangles with Aspect Ratio > 5: 0
+======================================
+======================================
