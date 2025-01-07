@@ -6,6 +6,7 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 import numpy as np
+import meshing_utils
 
 #%% Filling the gaps using dilation/erosion
 
@@ -60,17 +61,21 @@ def plot_voxels(voxel_array, resolution, slice_thickness, alpha = 1):
     ax.set_zlabel('Z Axis')
     return ax
 
-
-LVmask_raw, slice_thickness, resolution = read_data_h5('data.h5')
-#LVmask = close_apex(LVmask_raw)
-LVmask = LVmask_raw
-results_folder = Path('results')     
+sample_name = "MAD_1"
+output_folder =  "00_results"
+data_directory = Path("/home/shared/00_data")
+sample_directory = data_directory / sample_name
+data_address = sample_directory / "1_original_segmentation.h5"
+LVmask, resolution_data = meshing_utils.read_data_h5_mask(data_address.as_posix())
+resolution = resolution_data[0]
+slice_thickness = resolution_data[2]
+results_folder = sample_directory / output_folder    
 
 array_3d = LVmask[:,:,:]
 ax=plot_voxels(array_3d, resolution, slice_thickness)
 ax.view_init(elev=-150, azim=-45)
 ax.set_box_aspect(aspect=(1, 1, 1))
-ax.set_xlim([100, 160])
+ax.set_xlim([50, 130])
 ax.set_ylim([100, 160])
 ax.set_axis_off()
 #plt.show()
