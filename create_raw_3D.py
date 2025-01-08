@@ -76,7 +76,7 @@ def generate_voxel_mesh_meshio(voxel_array, resolution, slice_thickness):
         for j in range(ny):
             for k in range(nz):
                 if voxel_array[i, j, k]:  # Only process non-zero voxels
-                    x, y = i * resolution, j * resolution
+                    x, y = i * resolution, (ny-j) * resolution
                     z = -k * slice_thickness  # Negative progression in Z-direction
 
                     # Define voxel vertices
@@ -109,7 +109,7 @@ def generate_voxel_mesh_meshio(voxel_array, resolution, slice_thickness):
 
 #%%
 
-sample_name = "MAD_130"
+sample_name = "MAD_78"
 output_folder =  "00_results"
 data_directory = Path("/home/shared/00_data")
 sample_directory = data_directory / sample_name
@@ -153,7 +153,7 @@ plt.savefig(fname.as_posix())
 
 # Generate the mesh and save as VTK
 vertices, cells = generate_voxel_mesh_meshio(array_3d, resolution, slice_thickness)
-vtk_filename = results_folder / "06_Mesh/mesh_raw_3d.vtk"
+vtk_filename = results_folder / "06_Mesh/Mesh_3d_MRI.vtk"
 
 # Use meshio to save the mesh
 meshio.write_points_cells(
