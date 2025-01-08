@@ -25,7 +25,7 @@ def load_original_data(sample_directory):
     coords_epi = mu.get_coords_from_mask(mask_epi, resolution, slice_thickness)
     coords_endo = mu.get_coords_from_mask(mask_endo, resolution, slice_thickness)
     
-    return coords_epi, coords_endo, resolution
+    return coords_epi, coords_endo, resolution, slice_thickness
 
 def convert_pc_to_stack(pc, num_z_sections=20):
     num_points_per_z = int((pc.shape[0] - 1) / num_z_sections)
@@ -100,6 +100,13 @@ def main(args=None) -> int:
     
     # flag for using delauny triangulation ONLY for surface meshes
     parser.add_argument(
+        "-midvoxel",
+        action="store_true",
+        help="The flag for using middle of voxels for error calulation or not",
+    )
+    
+    # flag for using delauny triangulation ONLY for surface meshes
+    parser.add_argument(
         "-delauny",
         action="store_true",
         help="The flag for using delauny triangulation ONLY for surface meshes",
@@ -133,6 +140,7 @@ def main(args=None) -> int:
     data_directory = args.data_directory
     output_folder = args.output_folder
     mode_flag = args.m
+    mid_voxel_flag = args.midvoxel
     delauny_flag = args.delauny
     mode_folder = args.mode_folder
     mode_numbers = args.mode_numbers
@@ -167,7 +175,7 @@ def main(args=None) -> int:
     else:
         sample_directory = data_directory / sample_name
         # Load raw data from mask and resolution
-        coords_epi, coords_endo, resolution = load_original_data(sample_directory)
+        coords_epi, coords_endo, resolution, slice_thickness = load_original_data(sample_directory)
         # Load the saved point cloud data
         outdir = sample_directory / output_folder
         points_cloud_epi = np.loadtxt(outdir / 'points_cloud_epi.csv', delimiter=',')
@@ -182,6 +190,11 @@ def main(args=None) -> int:
             # Creating 3D and surface meshes of epi, endo and base
             mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
         # calculating the error between raw data and surfaces meshes of epi and endo
+        if mid_voxel_flag:
+            for arr in coords_epi:
+                arr[:,2] += -slice_thickness/2
+            for arr in coords_endo:
+                arr[:,2] += -slice_thickness/2
         errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
         meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
     
