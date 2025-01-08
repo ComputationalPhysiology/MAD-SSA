@@ -1,0 +1,12 @@
+Quality report of the final volumetric mesh:
+0.00 < quality < 0.10 :          1 elements
+0.10 < quality < 0.20 :          1 elements
+0.20 < quality < 0.30 :          0 elements
+0.30 < quality < 0.40 :         54 elements
+0.40 < quality < 0.50 :         74 elements
+0.50 < quality < 0.60 :        154 elements
+0.60 < quality < 0.70 :        389 elements
+0.70 < quality < 0.80 :        743 elements
+0.80 < quality < 0.90 :        590 elements
+0.90 < quality < 1.00 :        177 elements
+===============================

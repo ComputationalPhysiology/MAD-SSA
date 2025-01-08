@@ -1,0 +1,14 @@
+======= Mesh Statistics =======
+Epicardium with image resolution of 0
+Original coords vs surface mesh error distribution report:
+-------------------------------
+0.0002 ≤ error < 0.0547 :        227 instances ( 29.10%), cumulative:  29.10%
+0.0547 ≤ error < 0.1092 :        296 instances ( 37.95%), cumulative:  67.05%
+0.1092 ≤ error < 0.1637 :        177 instances ( 22.69%), cumulative:  89.74%
+0.1637 ≤ error < 0.2182 :         48 instances (  6.15%), cumulative:  95.90%
+0.2182 ≤ error < 0.2727 :         12 instances (  1.54%), cumulative:  97.44%
+0.2727 ≤ error < 0.3272 :          7 instances (  0.90%), cumulative:  98.33%
+0.3272 ≤ error < 0.3817 :          4 instances (  0.51%), cumulative:  98.85%
+0.3817 ≤ error < 0.4362 :          3 instances (  0.38%), cumulative:  99.23%
+0.4362 ≤ error < 0.4907 :          4 instances (  0.51%), cumulative:  99.74%
+0.4907 ≤ error < 0.5452 :          2 instances (  0.26%), cumulative: 100.00%

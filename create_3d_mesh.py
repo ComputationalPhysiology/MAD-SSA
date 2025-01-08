@@ -2,7 +2,7 @@ from pathlib import Path
 import argparse
 import json
 import numpy as np
-import csv
+
 from structlog import get_logger
 
 import meshing_utils
@@ -98,6 +98,13 @@ def main(args=None) -> int:
         help="The flag for whether using mode data or not",
     )
     
+    # flag for using delauny triangulation ONLY for surface meshes
+    parser.add_argument(
+        "-delauny",
+        action="store_true",
+        help="The flag for using delauny triangulation ONLY for surface meshes",
+    )
+    
     parser.add_argument(
         "--mode_numbers",
         nargs="+",
@@ -126,6 +133,7 @@ def main(args=None) -> int:
     data_directory = args.data_directory
     output_folder = args.output_folder
     mode_flag = args.m
+    delauny_flag = args.delauny
     mode_folder = args.mode_folder
     mode_numbers = args.mode_numbers
     SurfaceMeshSizeEndo = args.SurfaceMeshSizeEndo
@@ -167,12 +175,16 @@ def main(args=None) -> int:
         # Convering the np.array to list of np.array with number of z setions (slices)
         points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
         points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
-        # Creating 3D and surface meshes of epi, endo and base
-        mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
+        if delauny_flag:
+            # Creating surface meshes based on delauny triangulation
+            mesh_epi_fname, mesh_endo_fname = meshing_utils.generate_mesh_delauny(points_cloud_epi, points_cloud_endo, outdir) 
+        else:
+            # Creating 3D and surface meshes of epi, endo and base
+            mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
         # calculating the error between raw data and surfaces meshes of epi and endo
         errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
         meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
-        csv_file = Path(data_directory,"errors_summary.csv")
+        csv_file = Path(data_directory,"errors_summary_d.csv")
         meshing_utils.save_errors_to_dataframe(csv_file, sample_name, errors_epi, errors_endo, resolution)
 if __name__ == "__main__":
     main()
