@@ -115,7 +115,7 @@ def main(args=None) -> int:
     
     parser.add_argument(
         "--mode_folder",
-        default="modes",
+        default="/home/shared/MAD-SSA/PCA_Results_final_height/point_clouds",
         type=str,
         help="The folder containing mode data coordinates.",
     )
@@ -144,6 +144,7 @@ def main(args=None) -> int:
     if mode_flag:
         sample_directory = data_directory / mode_folder
         modes = sorted(sample_directory.glob("*.txt"))
+        
         # the name of mode_numbers is misleading here we deal each file as a mode which is not correct!
         selected_modes = [modes[i - 1] for i in mode_numbers]
         for mode in selected_modes:
@@ -159,7 +160,7 @@ def main(args=None) -> int:
             # Creating 3D and surface meshes of epi, endo and base
             outdir = mode.parent / f"00_results_{mode.stem}"
             outdir.mkdir(exist_ok=True)
-            mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
+            mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax, k_apex_epi=10)
             # calculating the error between raw data and surfaces meshes of epi and endo
             resolution = 0
             errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, points_cloud_epi[:-1], points_cloud_endo[:-1], outdir, resolution)
