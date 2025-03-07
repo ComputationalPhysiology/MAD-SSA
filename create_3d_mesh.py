@@ -39,6 +39,17 @@ def convert_pc_to_stack(pc, num_z_sections=20):
     
     return pc_list
 
+def extract_mode_number(path):
+    name = path.stem
+    if "avg_coords" in name:
+        return -1  # Ensure avg_coords comes first
+    elif "mode_" in name:
+        parts = name.split("_")
+        mode_number = int(parts[1])
+        return mode_number
+    else:
+        return float('inf') 
+
 def main(args=None) -> int:
     """
     Parse the command-line arguments.
@@ -144,7 +155,7 @@ def main(args=None) -> int:
     if mode_flag:
         sample_directory = data_directory / mode_folder
         modes = sorted(sample_directory.glob("*.txt"))
-        
+        modes = sorted(modes, key=extract_mode_number)
         # the name of mode_numbers is misleading here we deal each file as a mode which is not correct!
         selected_modes = [modes[i - 1] for i in mode_numbers]
         for mode in selected_modes:
