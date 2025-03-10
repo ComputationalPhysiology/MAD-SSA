@@ -2,6 +2,7 @@ from pathlib import Path
 import argparse
 import json
 import numpy as np
+import meshio
 
 from structlog import get_logger
 
@@ -174,15 +175,50 @@ def main(args=None) -> int:
             logger.info(f"--------------------------------------")
             # Load the saved point cloud data
             mode_pc = np.loadtxt(mode.as_posix(), delimiter=',')
-            points_cloud_epi = mode_pc[:800]
-            points_cloud_endo = mode_pc[800:]
+            points_cloud_epi = mode_pc[:801]
+            points_cloud_endo = mode_pc[801:]
             # Convering the np.array to list of np.array with number of z setions (slices)
             points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
             points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
             # Creating 3D and surface meshes of epi, endo and base
             outdir = mode.parent / f"00_results_{mode.stem}"
             outdir.mkdir(exist_ok=True)
-            mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax, k_apex_epi=k_apex_epi_list[i])
+            if delauny_flag:
+                outdir = outdir / "06_Mesh"
+                outdir.mkdir(exist_ok=True)
+                vertices_epi, faces_epi = meshing_utils.create_mesh_slice_by_slice(points_cloud_epi, scale=1.5)
+                vertices_endo, faces_endo = meshing_utils.create_mesh_slice_by_slice(points_cloud_endo, scale=1.5)
+                mesh_epi = mu.create_mesh(vertices_epi, faces_epi)
+                mesh_epi_filename = outdir / 'Mesh_epi.stl'
+                mesh_epi.save(mesh_epi_filename)
+                mesh_endo = mu.create_mesh(vertices_endo, faces_endo)
+                mesh_endo_filename = outdir / 'Mesh_endo.stl'
+                mesh_endo.save(mesh_endo_filename)
+                #base_endo = mu.get_base_from_vertices(vertices_endo)
+                #base_epi = mu.get_base_from_vertices(vertices_epi)
+                points_cloud_base = mu.create_base_point_cloud(points_cloud_endo[0], points_cloud_epi[0])
+                vertices_base, faces_base = mu.create_base_mesh(points_cloud_base)
+                mesh_base_fname=mu.create_mesh(vertices_base,faces_base)
+                try:
+                    mesh_merged = mu.merge_meshes(
+                        vertices_epi, faces_epi, vertices_base, faces_base, vertices_endo, faces_endo
+                    )
+                    mesh_merged_filename = outdir / 'Mesh_3D.stl'
+                    mesh_merged.save(mesh_merged_filename.as_posix())
+                    output_mesh_filename = outdir / 'Mesh_3D.msh'
+                    mu.generate_3d_mesh_from_stl(mesh_merged_filename.as_posix(), output_mesh_filename.as_posix(), MeshSizeMin=None, MeshSizeMax=None)                    # Read the .msh file and write to the vtk format
+                    mesh = meshio.read(output_mesh_filename)
+                    output_mesh_filename_vtk = outdir / 'Mesh_3D.vtk'
+                    meshio.write(output_mesh_filename_vtk, mesh)
+                except Exception as e:
+                    error_str = str(e)
+                    if "No elements in volume 1" in error_str: 
+                        logger.error("3D volumetric mesh generated, if needed try to check base and apex")
+                    else:
+                        # If it’s some other exception, re-raise so we don’t mask a different issue
+                        raise  
+            else:
+                mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax, k_apex_epi=k_apex_epi_list[i])
             # calculating the error between raw data and surfaces meshes of epi and endo
             resolution = 0
             errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, points_cloud_epi[:-1], points_cloud_endo[:-1], outdir, resolution)
