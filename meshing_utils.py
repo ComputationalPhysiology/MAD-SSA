@@ -23,6 +23,13 @@ def read_data_h5_mask(file_dir):
         resolution = h5_file["resolution"][:]
     return LVmask, resolution
 
+def read_data_h5_RVmask(file_dir):
+    with h5py.File(file_dir, "r") as h5_file:
+        RVmask = h5_file["RV_mask"][:]
+        RVcom = h5_file["RV_com"][:]
+        resolution = h5_file["resolution"][:]
+    return RVmask, RVcom, resolution
+
 def read_data_h5(file_dir):
     with h5py.File(file_dir, "r") as h5_file:
         LVmask = h5_file["sax_coords"][:]
@@ -560,6 +567,9 @@ def create_mesh_slice_by_slice(point_cloud, scale=1.5):
         faces_offset = sum(map(len, vertices))
         faces.append(slice_faces + faces_offset)
         vertices.append(point_cloud[k])
+    base_faces = mu.create_slice_mesh(slice2, point_cloud[-1], 1)
+    base_face_offset = sum(map(len, vertices))
+    faces.append(base_faces + base_face_offset)
     faces = np.vstack(faces)
     return np.vstack(point_cloud), faces
 
