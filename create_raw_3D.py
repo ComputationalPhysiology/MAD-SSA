@@ -72,13 +72,19 @@ def generate_voxel_mesh_meshio(voxel_array, resolution, slice_thickness):
 
     nx, ny, nz = voxel_array.shape
 
+    all_x = []
+    all_y = []
+    all_z = []
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
                 if voxel_array[i, j, k]:  # Only process non-zero voxels
                     x, y = i * resolution, (ny-j) * resolution
                     z = -k * slice_thickness  # Negative progression in Z-direction
-
+                    
+                    all_x.append(x + resolution/2) 
+                    all_y.append(y + resolution/2)
+                    all_z.append(z + slice_thickness/2)
                     # Define voxel vertices
                     voxel_vertices = [
                         [x, y, z],
@@ -105,20 +111,24 @@ def generate_voxel_mesh_meshio(voxel_array, resolution, slice_thickness):
     vertices = np.array(vertices)
     cells = [("hexahedron", np.array(cells))]
 
+    print(np.mean(all_x),np.mean(all_y),np.mean(all_z))
+    
     return vertices, cells
 
 #%%
 
-sample_name = "MAD_78"
+sample_name = "MAD_31"
 output_folder =  "00_results"
 data_directory = Path("/home/shared/00_data")
 sample_directory = data_directory / sample_name
 h5_file_address = meshing_utils.located_h5(sample_directory)
 LVmask, resolution_data = meshing_utils.read_data_h5_mask(h5_file_address.as_posix())
+RVmask, RVcom, resolution = meshing_utils.read_data_h5_RVmask(h5_file_address.as_posix())
 resolution = resolution_data[0]
 slice_thickness = resolution_data[2]
 results_folder = sample_directory / output_folder    
 array_3d = LVmask[:,:,:]
+array_3d_RV = RVmask[:,:,:]
 ax=plot_voxels(array_3d, resolution, slice_thickness)
 ax.view_init(elev=-150, azim=-45)
 ax.set_box_aspect(aspect=(1, 1, 1))
@@ -160,6 +170,17 @@ meshio.write_points_cells(
     vtk_filename.as_posix(),
     vertices,
     cells
+)
+
+# Generate the mesh and save as VTK
+RV_vertices, RV_cells = generate_voxel_mesh_meshio(array_3d_RV, resolution, slice_thickness)
+RV_vtk_filename = results_folder / "06_Mesh/RV_Mesh_3d_MRI.vtk"
+
+# Use meshio to save the mesh
+meshio.write_points_cells(
+    RV_vtk_filename.as_posix(),
+    RV_vertices,
+    RV_cells
 )
 
 # %%
