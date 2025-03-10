@@ -78,6 +78,12 @@ def main(args=None) -> int:
             tck_endo = mu.get_shax_from_coords(points_list, 0.0)
             ordered_points = mu.get_sample_points_from_shax(tck_endo, 40)
             outname = output_folder / file.stem
+            
+            # plt.scatter(points_list[0][:, 0], points_list[0][:, 1], color="k")
+            # plt.scatter(points_list[0][:5, 0], points_list[0][:5, 1], color="r")
+            # plt.scatter(ordered_points[0][:5, 0], ordered_points[0][:5, 1], color="g")
+            # plt.savefig("test.png")
+            
             ordered_points.append(apex)
             ordered_points = np.vstack(ordered_points)
             np.savetxt(outname.as_posix() + ".txt", ordered_points, delimiter=',',  fmt='%.8f')
@@ -89,11 +95,6 @@ def main(args=None) -> int:
                 mu.plot_3d_points_on_figure(points, fig=fig)
             fnmae = outdir / file.stem
             fig.write_html(fnmae.as_posix() + ".html")
-            
-    #plt.scatter(endo_points_list[-1][:, 0], endo_points_list[-1][:, 1], color="k")
-    #plt.scatter(endo_points_list[-1][:5, 0], endo_points_list[-1][:5, 1], color="r")
-    #plt.scatter(sample_points_endo[-1][:5, 0], sample_points_endo[-1][:5, 1], color="g")
-    #plt.savefig("test.png")
 
 
 if __name__ == "__main__":
