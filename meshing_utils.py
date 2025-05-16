@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import cv2 as cv
 from tqdm import tqdm
 import open3d as o3d
+import meshio
 
 import ventric_mesh.mesh_utils as mu
 import ventric_mesh.utils as utils
@@ -21,6 +22,13 @@ def read_data_h5_mask(file_dir):
         LVmask = h5_file["LVmask"][:]
         resolution = h5_file["resolution"][:]
     return LVmask, resolution
+
+def read_data_h5_RVmask(file_dir):
+    with h5py.File(file_dir, "r") as h5_file:
+        RVmask = h5_file["RV_mask"][:]
+        RVcom = h5_file["RV_com"][:]
+        resolution = h5_file["resolution"][:]
+    return RVmask, RVcom, resolution
 
 def read_data_h5(file_dir):
     with h5py.File(file_dir, "r") as h5_file:
@@ -498,3 +506,140 @@ def generate_pc(mesh_settings, sample_directory, output_folder, mask_flag, plot_
         fig.write_html(fnmae)
     
     return points_cloud_epi, points_cloud_endo
+
+
+def generate_3d_mesh(
+    points_cloud_epi, 
+    points_cloud_endo, 
+    outdir,
+    k_apex_endo=18,
+    k_apex_epi=18,
+    SurfaceMeshSizeEpi=5,
+    SurfaceMeshSizeEndo=5,
+    MeshSizeMin=5,
+    MeshSizeMax=10,
+    num_mid_layers_base=3):
+    # Calculate normals
+    normals_list_endo = mu.calculate_normals(points_cloud_endo, k_apex_endo)
+    normals_list_epi = mu.calculate_normals(points_cloud_epi, k_apex_epi)
+    outdir = outdir / "06_Mesh"
+    outdir.mkdir(exist_ok=True)
+    
+    mesh_epi_filename, mesh_endo_filename, mesh_base_filename = mu.VentricMesh_poisson(
+        points_cloud_epi,
+        points_cloud_endo,
+        num_mid_layers_base,
+        SurfaceMeshSizeEpi=SurfaceMeshSizeEpi,
+        SurfaceMeshSizeEndo=SurfaceMeshSizeEndo,
+        normals_list_epi = normals_list_epi,
+        normals_list_endo = normals_list_endo,
+        save_flag=True,
+        filename_suffix="",
+        result_folder=outdir.as_posix() + "/",
+    )
+    output_mesh_filename = outdir / 'Mesh_3D.msh'
+    
+    try:
+        mu.generate_3d_mesh_from_seperate_stl(mesh_epi_filename, mesh_endo_filename, mesh_base_filename, output_mesh_filename.as_posix(),  MeshSizeMin=MeshSizeMin, MeshSizeMax=MeshSizeMax)
+        
+        # Read the .msh file and write to the vtk format
+        mesh = meshio.read(output_mesh_filename)
+        output_mesh_filename_vtk = outdir / 'Mesh_3D.vtk'
+        meshio.write(output_mesh_filename_vtk, mesh)
+    except Exception as e:
+        error_str = str(e)
+        if "No elements in volume 1" in error_str: 
+            logger.error("3D volumetric mesh generated, if needed try to check base and apex")
+        else:
+            # If it’s some other exception, re-raise so we don’t mask a different issue
+            raise        
+    
+    return mesh_epi_filename, mesh_endo_filename, mesh_base_filename
+
+def create_mesh_slice_by_slice(point_cloud, scale=1.5):
+    vertices = []
+    faces = []
+    num_shax = len(point_cloud) - 2
+    for k in range(num_shax):
+        slice1 = np.array(point_cloud[k])
+        slice2 = np.array(point_cloud[k + 1])
+        slice_faces = mu.create_slice_mesh(slice1, slice2, scale)
+        faces_offset = sum(map(len, vertices))
+        faces.append(slice_faces + faces_offset)
+        vertices.append(point_cloud[k])
+    base_faces = mu.create_slice_mesh(slice2, point_cloud[-1], 1)
+    base_face_offset = sum(map(len, vertices))
+    faces.append(base_faces + base_face_offset)
+    faces = np.vstack(faces)
+    return np.vstack(point_cloud), faces
+
+def generate_mesh_delauny(
+    points_cloud_epi, 
+    points_cloud_endo, 
+    outdir,
+    ):
+    outdir = outdir / "06_Mesh"
+    outdir.mkdir(exist_ok=True)
+    vertices_epi, faces_epi = create_mesh_slice_by_slice(points_cloud_epi, scale=1.5)
+    vertices_endo, faces_endo = create_mesh_slice_by_slice(points_cloud_endo, scale=1.5)
+    
+    mesh_epi = mu.create_mesh(vertices_epi, faces_epi)
+    mesh_epi_filename = outdir / 'Mesh_epi.stl'
+    mesh_epi.save(mesh_epi_filename)
+    mesh_endo = mu.create_mesh(vertices_endo, faces_endo)
+    mesh_endo_filename = outdir / 'Mesh_endo.stl'
+    mesh_endo.save(mesh_endo_filename)
+    
+    return mesh_epi_filename, mesh_endo_filename
+
+def calculate_mesh_error(mesh_epi_filename, mesh_endo_filename, coords_epi, coords_endo, outdir, resolution):
+    fig = utils.plot_coords_and_mesh(coords_epi, coords_endo, mesh_epi_filename, mesh_endo_filename)
+    fname = outdir.as_posix() + "/Mesh_vs_Coords.html"
+    fig.write_html(fname)
+    
+    # Preparing error reports
+    # making error report 
+    errors_epi = utils.calculate_error_between_coords_and_mesh(coords_epi, mesh_epi_filename)
+    errors_endo = utils.calculate_error_between_coords_and_mesh(coords_endo, mesh_endo_filename)
+
+    return errors_epi, errors_endo
+
+def get_xylim_for_error_hist(errors_epi, errors_endo):
+    all_errors = np.concatenate([errors_epi, errors_endo])
+    xlim = (np.min(all_errors), np.max(all_errors))
+    hist_epi, _ = np.histogram(errors_epi, bins=30)
+    hist_endo, _ = np.histogram(errors_endo, bins=30)
+    max_y = max(np.max(hist_epi), np.max(hist_endo))
+    ylim = (0, max_y + max_y * 0.1)  # Add 10% padding for aesthetics
+    return xlim, ylim
+
+def export_error_stats(errors_epi, errors_endo, outdir, resolution):
+    xlim, ylim = get_xylim_for_error_hist(errors_epi, errors_endo)
+     
+    fname_epi = outdir / "Epi_mesh_errors.png"
+    fname_endo = outdir / "Endo_mesh_errors.png"
+
+    utils.plot_error_histogram(
+        errors=errors_epi,
+        fname=fname_epi,
+        color='red',
+        xlim=xlim,
+        ylim=ylim,
+        title_prefix='Epi', 
+        resolution=resolution
+    )
+
+    utils.plot_error_histogram(
+        errors=errors_endo,
+        fname=fname_endo,
+        color='blue',
+        xlim=xlim,
+        ylim=ylim,
+        title_prefix='Endo', 
+        resolution=resolution
+    )
+    fname_epi = fname_epi.as_posix()[:-4] + ".txt"
+    utils.save_error_distribution_report(errors_epi,fname_epi, n_bins=10, surface_name="Epicardium", resolution=resolution)
+    fname_endo = fname_endo.as_posix()[:-4] + ".txt"
+    utils.save_error_distribution_report(errors_endo, fname_endo, n_bins=10,  surface_name="Endocardium", resolution=resolution)
+    

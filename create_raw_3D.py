@@ -6,6 +6,8 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 import numpy as np
+import meshing_utils
+import meshio
 
 #%% Filling the gaps using dilation/erosion
 
@@ -60,17 +62,77 @@ def plot_voxels(voxel_array, resolution, slice_thickness, alpha = 1):
     ax.set_zlabel('Z Axis')
     return ax
 
+def generate_voxel_mesh_meshio(voxel_array, resolution, slice_thickness):
+    """Generate a 3D voxel mesh and save it as a VTK file using meshio."""
+    # Reorder the voxel array to X × Y × Z
+    voxel_array = np.transpose(voxel_array, (2, 1, 0))  # Z × X × Y -> X × Y × Z
 
-LVmask_raw, slice_thickness, resolution = read_data_h5('data.h5')
-#LVmask = close_apex(LVmask_raw)
-LVmask = LVmask_raw
-results_folder = Path('results')     
+    vertices = []
+    cells = []
 
+    nx, ny, nz = voxel_array.shape
+
+    all_x = []
+    all_y = []
+    all_z = []
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                if voxel_array[i, j, k]:  # Only process non-zero voxels
+                    x, y = i * resolution, (ny-j) * resolution
+                    z = -k * slice_thickness  # Negative progression in Z-direction
+                    
+                    all_x.append(x + resolution/2) 
+                    all_y.append(y + resolution/2)
+                    all_z.append(z + slice_thickness/2)
+                    # Define voxel vertices
+                    voxel_vertices = [
+                        [x, y, z],
+                        [x + resolution, y, z],
+                        [x, y + resolution, z],
+                        [x + resolution, y + resolution, z],
+                        [x, y, z - slice_thickness],
+                        [x + resolution, y, z - slice_thickness],
+                        [x, y + resolution, z - slice_thickness],
+                        [x + resolution, y + resolution, z - slice_thickness],
+                    ]
+
+                    # Add vertices
+                    base_index = len(vertices)
+                    vertices.extend(voxel_vertices)
+
+                    # Define hexahedron cell
+                    cells.append([
+                        base_index, base_index + 1, base_index + 3, base_index + 2,
+                        base_index + 4, base_index + 5, base_index + 7, base_index + 6
+                    ])
+
+    # Convert to numpy arrays for meshio
+    vertices = np.array(vertices)
+    cells = [("hexahedron", np.array(cells))]
+
+    print(np.mean(all_x),np.mean(all_y),np.mean(all_z))
+    
+    return vertices, cells
+
+#%%
+
+sample_name = "MAD_31"
+output_folder =  "00_results"
+data_directory = Path("/home/shared/00_data")
+sample_directory = data_directory / sample_name
+h5_file_address = meshing_utils.located_h5(sample_directory)
+LVmask, resolution_data = meshing_utils.read_data_h5_mask(h5_file_address.as_posix())
+RVmask, RVcom, resolution = meshing_utils.read_data_h5_RVmask(h5_file_address.as_posix())
+resolution = resolution_data[0]
+slice_thickness = resolution_data[2]
+results_folder = sample_directory / output_folder    
 array_3d = LVmask[:,:,:]
+array_3d_RV = RVmask[:,:,:]
 ax=plot_voxels(array_3d, resolution, slice_thickness)
 ax.view_init(elev=-150, azim=-45)
 ax.set_box_aspect(aspect=(1, 1, 1))
-ax.set_xlim([100, 160])
+ax.set_xlim([50, 130])
 ax.set_ylim([100, 160])
 ax.set_axis_off()
 #plt.show()
@@ -98,6 +160,28 @@ ax.set_axis_off()
 fname = results_folder / 'Top_view.png'
 plt.savefig(fname.as_posix())
 
+
+# Generate the mesh and save as VTK
+vertices, cells = generate_voxel_mesh_meshio(array_3d, resolution, slice_thickness)
+vtk_filename = results_folder / "06_Mesh/Mesh_3d_MRI.vtk"
+
+# Use meshio to save the mesh
+meshio.write_points_cells(
+    vtk_filename.as_posix(),
+    vertices,
+    cells
+)
+
+# Generate the mesh and save as VTK
+RV_vertices, RV_cells = generate_voxel_mesh_meshio(array_3d_RV, resolution, slice_thickness)
+RV_vtk_filename = results_folder / "06_Mesh/RV_Mesh_3d_MRI.vtk"
+
+# Use meshio to save the mesh
+meshio.write_points_cells(
+    RV_vtk_filename.as_posix(),
+    RV_vertices,
+    RV_cells
+)
 
 # %%
 # import plotly.graph_objects as go

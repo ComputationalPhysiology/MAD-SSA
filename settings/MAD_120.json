@@ -9,9 +9,9 @@
             "smooth_level_epi": 0.1,
             "smooth_level_endo": 0.1,
             "num_lax_points": 32,
-            "lax_smooth_level_epi": 20,
-            "lax_smooth_level_endo": 15,
-            "lax_spline_order_epi": 2,
+            "lax_smooth_level_epi": 30,
+            "lax_smooth_level_endo": 200,
+            "lax_spline_order_epi": 3,
             "lax_spline_order_endo": 3,
             "z_sections_flag_epi": 0,
             "z_sections_flag_endo": 0
