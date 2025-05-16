@@ -1462,12 +1462,12 @@ def plot(fdir, clip_z, outname):
     slice1.PointMergeMethod = 'Uniform Binning'
 
     # init the 'Plane' selected for 'SliceType'
-    slice1.SliceType.Origin = [0.03812262307586067, 2.28852714869904, 0.6184751057046096]
+    slice1.SliceType.Origin = [0.03912262307586067, 2.28852714869904, 0.6184751057046096]
     slice1.SliceType.Normal = [1.0, 0.0, 0.0]
     slice1.SliceType.Offset = 0.0
 
     # init the 'Plane' selected for 'HyperTreeGridSlicer'
-    slice1.HyperTreeGridSlicer.Origin = [0.03812262307586067, 2.28852714869904, 0.6184751057046096]
+    slice1.HyperTreeGridSlicer.Origin = [0.03912262307586067, 2.28852714869904, 0.6184751057046096]
     slice1.HyperTreeGridSlicer.Normal = [1.0, 0.0, 0.0]
     slice1.HyperTreeGridSlicer.Offset = 0.0
 
@@ -1500,7 +1500,7 @@ def plot(fdir, clip_z, outname):
     renderView1.CameraParallelScale = 34.77515867297295
 
     # Properties modified on slice1.SliceType
-    slice1.SliceType.Origin = [0.03812262307586067, 2.288527148699039, 0.6184751057046078]
+    slice1.SliceType.Origin = [0.04012262307586067, 2.288527148699039, 0.6184751057046078]
 
     # show data in view
     slice1Display = Show(slice1, renderView1, 'GeometryRepresentation')
@@ -2039,11 +2039,11 @@ def plot(fdir, clip_z, outname):
     renderView1.CameraViewUp = [0.0, 0.0, 1.0]
     renderView1.CameraParallelScale = 26.386730030937414
 
-    # destroy clip1
+    # # destroy clip1
     Delete(clip1)
     del clip1
 
-    # destroy clip1
+    # # destroy clip1
     Delete(clip2)
     del clip2
 
@@ -2086,8 +2086,8 @@ import re
 
 
 
-dir = "/Users/javad/Docker/MitralDisjunction/00_data/modes/Results"
-outdir = "/Users/javad/Docker/MitralDisjunction/00_data/modes/Images"
+dir = "/Users/javad/Docker/MitralDisjunction/00_data/modes_3/Results"
+outdir = "/Users/javad/Docker/MitralDisjunction/00_data/modes_3/Images"
 # mesh_folder = "06_Mesh"
 
 # Ensure output directory exists
@@ -2104,11 +2104,15 @@ sorted_dirs = sorted(
 )
 print(sorted_dirs)
 
-for folder in sorted_dirs:
-    print(folder)
+# z_values = [25, 18.5, 25, 17, 25, 25, 25, 25, 25 ,17]
+
+for i, folder  in enumerate(sorted_dirs):
+    print(folder, i)
     fdir = os.path.join(dir, folder)
     outfname = f'{folder}.png'
     outpath = os.path.join(outdir, outfname)
-    plot(fdir, 25, outpath)
+    # plot(fdir, float(z_values[i]), outpath)
+    plot(fdir, 30, outpath)
+
     print(outpath)
 
