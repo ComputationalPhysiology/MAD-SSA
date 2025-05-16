@@ -129,7 +129,7 @@ def main(args=None) -> int:
         "--mode_numbers",
         nargs="+",
         type=int,
-        default=1,
+        default=None,
         help="The flag for whether using mode data or not",
     )
     
@@ -169,7 +169,10 @@ def main(args=None) -> int:
         modes = sorted(sample_directory.glob("*.txt"))
         modes = sorted(modes, key=extract_mode_number)
         # the name of mode_numbers is misleading here we deal each file as a mode which is not correct!
-        selected_modes = [modes[i - 1] for i in mode_numbers]
+        if mode_numbers is None:
+            selected_modes = modes
+        else:   
+            selected_modes = [modes[i - 1] for i in mode_numbers]
         for i, mode in enumerate(selected_modes):
             logger.info(f"Mode {mode.stem} is being analysed ...")
             logger.info(f"--------------------------------------")
