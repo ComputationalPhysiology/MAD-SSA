@@ -162,12 +162,14 @@ def main(args=None) -> int:
     VolumeMeshSizeMin = args.VolumeMeshSizeMin
     VolumeMeshSizeMax = args.VolumeMeshSizeMax
 
-    k_apex_epi_list = [10, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+    k_apex_epi_list = [10, 15, 15, 15, 15, 15, 15, 15, 15, 10]
+    k_apex_endo_list = [18, 18, 18, 18, 18, 18, 18, 18, 18, 10]
 
     if mode_flag:
         sample_directory = data_directory / mode_folder
         modes = sorted(sample_directory.glob("*.txt"))
         modes = sorted(modes, key=extract_mode_number)
+        print(f"Modes: {[mode.stem for mode in modes]}")
         # the name of mode_numbers is misleading here we deal each file as a mode which is not correct!
         if mode_numbers is None:
             selected_modes = modes
@@ -184,7 +186,8 @@ def main(args=None) -> int:
             points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
             points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
             # Creating 3D and surface meshes of epi, endo and base
-            outdir = mode.parent / f"00_results_{mode.stem}"
+            outdir = mode.parent.parent / f"Results/{mode.stem}"
+            print(f"outdir: {outdir}")
             outdir.mkdir(exist_ok=True)
             if delauny_flag:
                 outdir = outdir / "06_Mesh"
@@ -221,7 +224,7 @@ def main(args=None) -> int:
                         # If it’s some other exception, re-raise so we don’t mask a different issue
                         raise  
             else:
-                mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax, k_apex_epi=k_apex_epi_list[i])
+                mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax, k_apex_epi=k_apex_epi_list[i], k_apex_endo=k_apex_endo_list[i])
             # calculating the error between raw data and surfaces meshes of epi and endo
             resolution = 0
             errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, points_cloud_epi[:-1], points_cloud_endo[:-1], outdir, resolution)
