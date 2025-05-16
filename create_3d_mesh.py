@@ -188,7 +188,7 @@ def main(args=None) -> int:
             # Creating 3D and surface meshes of epi, endo and base
             outdir = mode.parent.parent / f"Results/{mode.stem}"
             print(f"outdir: {outdir}")
-            outdir.mkdir(exist_ok=True)
+            outdir.mkdir(exist_ok=True, parents=True)
             if delauny_flag:
                 outdir = outdir / "06_Mesh"
                 outdir.mkdir(exist_ok=True)
