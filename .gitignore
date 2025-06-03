@@ -5,6 +5,11 @@ __pycache__/
 .DS_Store
 *.py[cod]
 *$py.class
+meshes/
+mode_comparison_results/
+*.png
+*.html
+*.txt
 
 # C extensions
 *.so
