@@ -14,7 +14,7 @@ with open('/home/shared/metrics_20241209.json') as f:
 flattened_data = []
 for key, values in metrics.items():
     number = re.findall(r'\d+', key)[0]
-    flat_entry = {'Pat_no': number}  # Include the unique key as an identifier
+    flat_entry = {'Pat_no': number}  
     for k, v in values.items():
         if isinstance(v, list):
             for i, item in enumerate(v):

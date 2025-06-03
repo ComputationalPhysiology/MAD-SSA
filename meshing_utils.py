@@ -542,7 +542,7 @@ def generate_3d_mesh(
     except Exception as e:
         error_str = str(e)
         if "No elements in volume 1" in error_str: 
-            logger.error("3D volumetric mesh generated, if needed try to check base and apex")
+            logger.error("3D volumetric mesh not generated, if needed try to check base and apex")
         else:
             # If it’s some other exception, re-raise so we don’t mask a different issue
             raise        
