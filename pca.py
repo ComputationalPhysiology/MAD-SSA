@@ -100,7 +100,6 @@ def plot_deformation_field(deformation, avg_coords, output_path):
         )
     )
 
-    # Save plot as an HTML file
     fig.write_html(output_path)
 
 
@@ -111,11 +110,11 @@ def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale
     plus_coords = avg_coords + scale * std_dev * mode_vector
     minus_coords = avg_coords - scale * std_dev * mode_vector
     
-    # Calculate the overall size of the point cloud in the "+" and "-" directions
+    # # Calculate the overall size of the point cloud in the "+" and "-" directions
     var_plus = np.sum(plus_coords.std(axis=0))
     var_minus = np.sum(minus_coords.std(axis=0))
 
-    # Flip sign if the "-" direction increases the overall size more than the "+" direction
+    # # Flip sign if the "-" direction increases the overall size more than the "+" direction
     if var_minus > var_plus:
         plus_coords, minus_coords = minus_coords, plus_coords
 
@@ -245,7 +244,10 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
 
     # Load point clouds
     for case in cases:
-        file_path = os.path.join(input_dir, f"MAD_{case}_aligned_points.txt")
+        print(f"Processing case {case}")
+       
+        # file_path = os.path.join(input_dir, f"MAD_{case}_aligned_points.txt")
+        file_path = os.path.join(input_dir, f"MAD_{case}_merged_points.txt")
         try:
             point_cloud = np.loadtxt(file_path, delimiter=",")
             height = get_patient_height(int(case))
@@ -316,17 +318,27 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
         print(f"Mode {i}: plus_coords saved to {plus_path}, minus_coords saved to {minus_path}")
 
         visualize_mode_with_std(mode_coords, avg_coords, std_dev, output_path, scale)
-        visualize_modes_with_vector(avg_coords, mode_coords, std_dev, output_path2, scale)
-        deformation = compute_deformation_field(avg_coords, mode_coords, std_dev)
-        plot_deformation_field(deformation, avg_coords, output_path3)
-        magnitudes = compute_heat_map(deformation)
+        # visualize_modes_with_vector(avg_coords, mode_coords, std_dev, output_path2, scale)
+        # deformation = compute_deformation_field(avg_coords, mode_coords, std_dev)
+        # plot_deformation_field(deformation, avg_coords, output_path3)
+        # magnitudes = compute_heat_map(deformation)
 
-        plot_heat_map(magnitudes, avg_coords, output_path4)
+        # plot_heat_map(magnitudes, avg_coords, output_path4)
+import re
+def extract_number_from_filename(filename):
+    match = re.search(r'MAD_(\d+)\_merged_points.txt', filename)
+    if match:
+        return int(match.group(1))
+    else:
+        raise ValueError("Filename does not match the expected pattern")
+
 if __name__ == "__main__":
-    input_directory = "./Aligned_Models"
-    cases = [c.split("_")[1] for c in os.listdir(input_directory) if c.endswith("_aligned_points.txt")]
+    input_directory = "./FINAL_ALIGNMENT_com/merged_points"
     
-    output_directory = "./PCA_Results_final_height"
+    # cases = [c.split("_")[3] for c in os.listdir(input_directory) if c.startswith("points_cloud")]
+    cases = [extract_number_from_filename(c) for c in os.listdir(input_directory)]
+   
+    output_directory = "./PCA_Results_final_height_com2"
     os.makedirs(output_directory, exist_ok=True)
     pca_decomp(cases, input_directory, output_directory, scale=2.0)
 
