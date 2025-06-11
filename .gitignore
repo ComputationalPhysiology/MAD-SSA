@@ -6,11 +6,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 meshes/
+settings/
 mode_comparison_results/
 *.png
 *.html
 *.txt
-
+@.xlsx
 # C extensions
 *.so
 
