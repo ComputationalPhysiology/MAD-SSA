@@ -215,19 +215,36 @@ def cumvar_plot(cum_variance, outdir):
     plt.grid()
     plt.savefig(os.path.join(outdir, "cumulative_variance.png"))
 
-def get_patient_height(patient_number):
-    file_path = "/home/shared/ClinicalData_OUS_MADPatients_EIVIND_29_4_2021.xlsx"
-    df = pd.read_excel(file_path)
-   
-    if pd.isna(df[df['Pat_no'] == patient_number][["Height"]].values.flatten()) :  
-        return np.median(df["Height"].dropna().values)
-    else:
-        patient_height = df[df['Pat_no'] == patient_number][["Height"]].values.flatten()[0]
+def get_patient_height(patient_number, height_file_path=None):
+    """
+    Get the height of a patient from a spreadsheet if available, otherwise return 1.
     
-        return patient_height
+    Args:
+        patient_number: The patient number to look up.
+        height_file_path: Path to the spreadsheet containing height data (optional).
+    
+    Returns:
+        The height of the patient or 1 if no data is available.
+    """
+    if height_file_path and os.path.exists(height_file_path):
+        try:
+            df = pd.read_excel(height_file_path)
+            if patient_number in df['Pat_no'].values:
+                patient_height = df.loc[df['Pat_no'] == patient_number, 'Height'].values[0]
+                if not pd.isna(patient_height):
+                    return patient_height
+            # If height is NaN or not found, return the median height
+            return np.median(df['Height'].dropna().values)
+        except Exception as e:
+            print(f"Error reading height file: {e}")
+            return 1
+    else:
+        # Default height if no file is provided or file doesn't exist
+        return 1
 
 
-def pca_decomp(cases, input_dir, output_dir, scale=2.0):
+
+def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
     """
     Perform PCA decomposition on aligned point clouds and visualize modes.
 
@@ -236,6 +253,7 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
         input_dir: Directory containing aligned point cloud files.
         output_dir: Directory to save PCA results and visualizations.
         scale: Multiplier for standard deviation in mode visualization.
+        height_file_path: Path to the spreadsheet containing height data (optional).
     """
     outdir_modes = os.path.join(output_dir, "modes")
     os.makedirs(outdir_modes, exist_ok=True)
@@ -246,12 +264,8 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
         file_path = os.path.join(input_dir, f"{case}_merged_points.txt")
         try:
             point_cloud = np.loadtxt(file_path, delimiter=",")
-            height = get_patient_height(int(case))
-            if height is None:
-                height =1
-           
-            point_coords.append(point_cloud/height)
-
+            height = get_patient_height(int(case), height_file_path)
+            point_coords.append(point_cloud / height)
         except Exception as e:
             print(f"Skipping case {case} due to error: {e}")
             continue
@@ -259,7 +273,6 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
     if not point_coords:
         print("No valid point clouds found. Exiting...")
         return
-
     point_coords = np.array(point_coords)
     cshape = point_coords.shape
     X = point_coords.reshape((cshape[0], cshape[1] * cshape[2]), order="C")
@@ -316,7 +329,7 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0):
         print(f"Mode {i}: plus_coords saved to {plus_path}, minus_coords saved to {minus_path}")
 
         visualize_mode_with_std(mode_coords, avg_coords, std_dev, output_path, scale)
-        # visualize_modes_with_vector(avg_coords, mode_coords, std_dev, output_path2, scale)
+        visualize_modes_with_vector(avg_coords, mode_coords, std_dev, output_path2, scale)
         # deformation = compute_deformation_field(avg_coords, mode_coords, std_dev)
         # plot_deformation_field(deformation, avg_coords, output_path3)
         # magnitudes = compute_heat_map(deformation)
