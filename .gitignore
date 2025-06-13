@@ -14,7 +14,8 @@ mode_comparison_results/
 @.xlsx
 # C extensions
 *.so
-
+/*
+!controls/
 # Distribution / packaging
 .Python
 build/
