@@ -12,11 +12,7 @@ This project provides a complete pipeline for processing 3D cardiac medical imag
   - [Directory Structure](#directory-structure)
   - [Running the Full Pipeline](#running-the-full-pipeline)
   - [Individual Scripts](#individual-scripts)
-    - [1. Point Cloud Generation](#1-point-cloud-generation)
-    - [2. Point Cloud Alignment](#2-point-cloud-alignment)
-    - [3. PCA and Shape Analysis](#3-pca-and-shape-analysis)
-    - [4. 3D Mesh Generation and Error Analysis](#4-3d-mesh-generation-and-error-analysis)
-- [File Descriptions](#-file-descriptions)
+
 
 ## 🔭 Project Overview
 
@@ -79,3 +75,13 @@ The easiest way to run the entire pipeline is to execute the `main.py` script. T
 
 ```bash
 python main.py
+### Individual Scripts
+
+While `main.py` runs the full pipeline, you can also execute scripts individually for granular control.
+
+| Script                | Description                                                | Usage                                       |
+| :-------------------- | :--------------------------------------------------------- | :------------------------------------------ |
+| **`main_pc.py`** | Generates 3D point clouds from `.h5` segmentations.        | `python main_pc.py [--name <subject>]`      |
+| **`alignment.py`** | Aligns all generated point clouds to a common origin.      | `python alignment.py`                       |
+| **`pca.py`** | Runs PCA on aligned point clouds to find shape variations. | `python pca.py`                             |
+| **`create_3d_mesh.py`** | Creates a 3D mesh and computes error metrics.            | `python create_3d_mesh.py --name <subject>` |
