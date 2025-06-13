@@ -1,4 +1,4 @@
-# 3D Cardiac Mesh Analysis Pipeline
+# 3D Cardiac Statistical Shape Analysis Pipeline
 
 This project provides a complete pipeline for processing 3D cardiac medical imaging data, from initial segmentation masks to statistical shape analysis using Principal Component Analysis (PCA). The pipeline generates 3D point clouds from segmentations, aligns them, and then performs PCA to identify primary modes of shape variation. Additionally, it includes scripts to create 3D meshes and evaluate their accuracy against the original data.
 
