@@ -53,10 +53,12 @@ This section explains how to use the scripts to process your data.
 
 The scripts expect a specific directory structure, which is configured in `config.py`. You should have the following directories:
 
+* `controls/ES_files_controls`: This is  where your subject data (in `.h5` format) is  stored.
+  
+Next, the script will generate:
 * `controls/00_data/`: This is the **input directory** where your subject data point cloud result will be stored. Each subject should have its own subfolder.
 * `Aligned_Models/`: This is the **output directory** for aligned point clouds.
 * `controls/PCA_Results/`: This is the **output directory** for PCA results, including modes of variation and visualizations.
-* `controls/ES_files_controls`: This is  where your subject data (in `.h5` format) is  stored.
 * `controls/settings/`: This contains the **fitting parameters** for the point cloud generation step.
 
 ### Running the Full Pipeline
