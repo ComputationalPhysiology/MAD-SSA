@@ -75,6 +75,7 @@ The easiest way to run the entire pipeline is to execute the `main.py` script. T
 
 ```bash
 python main.py
+```
 ### Individual Scripts
 
 While `main.py` runs the full pipeline, you can also execute scripts individually for granular control.
