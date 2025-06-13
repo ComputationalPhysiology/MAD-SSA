@@ -29,10 +29,6 @@ The entire process is contained in `main.py`, which runs the necessary scripts i
 
 Follow these instructions to set up and run the project on your local machine.
 
-### Prerequisites
-
-Make sure you have Python 3 installed. You will also need to install the required Python libraries. A `requirements.txt` file would be ideal for managing dependencies. Based on the imports, you'll need libraries such as ....
-
 ### Installation
 
 1.  **Clone the repository:**
