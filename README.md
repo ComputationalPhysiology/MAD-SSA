@@ -23,7 +23,7 @@ The main goal of this project is to automate the process of analyzing cardiac sh
 3.  **Principal Component Analysis (PCA)**: Performs PCA on the aligned point clouds to identify the main patterns of shape variation across the subjects.
 4.  **3D Mesh Creation**: (Optional) Generates a 3D mesh from a point cloud and computes error metrics by comparing it to the ground truth segmentation.
 
-The entire process is orchestrated by `main.py`, which runs the necessary scripts in sequence.
+The entire process is contained in `main.py`, which runs the necessary scripts in sequence.
 
 ## 🚀 Getting Started
 
@@ -31,18 +31,7 @@ Follow these instructions to set up and run the project on your local machine.
 
 ### Prerequisites
 
-Make sure you have Python 3 installed. You will also need to install the required Python libraries. A `requirements.txt` file would be ideal for managing dependencies. Based on the imports, you'll need libraries such as:
-
-* numpy
-* pandas
-* scikit-learn
-* matplotlib
-* plotly
-* meshio
-* open3d
-* h5py
-* structlog
-* opencv-python
+Make sure you have Python 3 installed. You will also need to install the required Python libraries. A `requirements.txt` file would be ideal for managing dependencies. Based on the imports, you'll need libraries such as ....
 
 ### Installation
 
@@ -78,7 +67,7 @@ python main.py
 ```
 ### Individual Scripts
 
-While `main.py` runs the full pipeline, you can also execute scripts individually for granular control.
+You can  execute scripts individually.
 
 | Script                | Description                                                | Usage                                       |
 | :-------------------- | :--------------------------------------------------------- | :------------------------------------------ |
