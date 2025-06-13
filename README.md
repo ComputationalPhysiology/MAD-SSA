@@ -85,7 +85,7 @@ For more advanced control, especially over the point cloud generation process, y
 
 #### Adjusting LAX Curve Smoothing
 
-You can control the smoothing level of the LAX curves for both the epicardium and endocardium. This is useful for fine-tuning the point cloud to better fit the source data.
+You can control the smoothing level of the LAX curves for both the epicardium and endocardium. This is useful for fine-tuning the point cloud to better fit the source data, while correcting for breath-hold misalignment.
 
 * **How to adjust**: Modify the `lax_smooth_level_epi` and `lax_smooth_level_endo` values in the patient's corresponding JSON settings file.
 * **Location**: These files are located in the directory specified by `SETTINGS_DIRECTORY` in `config.py` (e.g., `controls/settings/`).
