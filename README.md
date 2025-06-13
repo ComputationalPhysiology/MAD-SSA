@@ -57,6 +57,7 @@ The scripts expect a specific directory structure, which is configured in `confi
 * `Aligned_Models/`: This is the **output directory** for aligned point clouds.
 * `controls/PCA_Results/`: This is the **output directory** for PCA results, including modes of variation and visualizations.
 * `controls/ES_files_controls`: This is  where your subject data (in `.h5` format) is  stored.
+* `controls/settings/`: This contains the **fitting parameters** for the point cloud generation step.
 
 ### Running the Full Pipeline
 
@@ -67,7 +68,7 @@ python main.py
 ```
 ### Individual Scripts
 
-You can  execute scripts individually.
+You can execute scripts individually:
 
 | Script                | Description                                                | Usage                                       |
 | :-------------------- | :--------------------------------------------------------- | :------------------------------------------ |
@@ -75,3 +76,28 @@ You can  execute scripts individually.
 | **`alignment.py`** | Aligns all generated point clouds to a common origin.      | `python alignment.py`                       |
 | **`pca.py`** | Runs PCA on aligned point clouds to find shape variations. | `python pca.py`                             |
 | **`create_3d_mesh.py`** | Creates a 3D mesh and computes error metrics.            | `python create_3d_mesh.py --name <subject>` |
+
+
+
+For more advanced control, especially over the point cloud generation process, you can modify the patient-specific settings files.
+
+#### Adjusting LAX Curve Smoothing
+
+You can control the smoothing level of the LAX curves for both the epicardium and endocardium. This is useful for fine-tuning the point cloud to better fit the source data.
+
+* **How to adjust**: Modify the `lax_smooth_level_epi` and `lax_smooth_level_endo` values in the patient's corresponding JSON settings file.
+* **Location**: These files are located in the directory specified by `SETTINGS_DIRECTORY` in `config.py` (e.g., `controls/settings/`).
+
+**Example `settings/<patient_name>.json`:**
+
+```json
+{
+    "mesh": {
+        "fine": {
+            "lax_smooth_level_epi": 80,
+            "lax_smooth_level_endo": 50,
+            "...": "..."
+        }
+    }
+}
+
