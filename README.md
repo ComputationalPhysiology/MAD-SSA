@@ -52,8 +52,7 @@ Make sure you have Python 3 installed. You will also need to install the require
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
-    cd <your-repository-directory>
+    git clone https://github.com/ComputationalPhysiology/MAD-SSA.git
     ```
 
 2.  **Install the required libraries:**
@@ -69,9 +68,10 @@ This section explains how to use the scripts to process your data.
 
 The scripts expect a specific directory structure, which is configured in `config.py`. You should have the following directories:
 
-* `controls/00_data/`: This is the **input directory** where your subject data (in `.h5` format) is stored. Each subject should have its own subfolder.
+* `controls/00_data/`: This is the **input directory** where your subject data point cloud result will be stored. Each subject should have its own subfolder.
 * `Aligned_Models/`: This is the **output directory** for aligned point clouds.
 * `controls/PCA_Results/`: This is the **output directory** for PCA results, including modes of variation and visualizations.
+* `controls/ES_files_controls`: This is  where your subject data (in `.h5` format) is  stored.
 
 ### Running the Full Pipeline
 
