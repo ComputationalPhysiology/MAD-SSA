@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import ventric_mesh.mesh_utils as mu
 import plotly.graph_objects as go
-from ventric_pca.get_com_rv import get_rv_point
+from ventricshape.get_com_rv import get_rv_point
 from structlog import get_logger
 logger = get_logger()
 
@@ -107,10 +107,9 @@ def align_y_axis_to_rv_new(P_origin, P_rv_new, points):
 
 def process_subject(subject_id, input_dir, output_dir):
     print(subject_id)
-    # number = re.findall(r'\d+', subject_id)[0]
 
-    points_epi_file= os.path.join(input_dir,f"{subject_id}/00_results/points_cloud_epi.csv")
-    points_endo_file = os.path.join(input_dir,f"{subject_id}/00_results/points_cloud_endo.csv")
+    points_epi_file= os.path.join(input_dir,f"{subject_id}/points_cloud_epi.csv")
+    points_endo_file = os.path.join(input_dir,f"{subject_id}/points_cloud_endo.csv")
   
   
     points_cloud_epi = np.array(pd.read_csv(points_epi_file,header=None))
@@ -122,7 +121,7 @@ def process_subject(subject_id, input_dir, output_dir):
    
     com = np.mean(points_cloud_epi, axis=0)
     P_origin = np.array([com])
-    P_rv = np.array([get_rv_point("/home/shared/controls/ES_files_controls",subject_id)])
+    P_rv = np.array([get_rv_point(input_dir,subject_id)])
 
     
     z_axis = np.array([[0, 0, 1]])
@@ -242,13 +241,3 @@ def process_all_subjects(subject_ids, input_dir, output_dir):
 
 
 
-# points_list = convert_pc_to_stack(points, num_z_sections=20)
-# apex = points_list.pop(-1)
-# points_list = remove_duplicates(points_list)
-# tck_endo = mu.get_shax_from_coords(points_list, 0.0)
-# ordered_points = mu.get_sample_points_from_shax(tck_endo, 40)
-# outname = 
-# ordered_points.append(apex)
-# ordered_points = np.vstack(ordered_points)
-# np.savetxt(outname.as_posix() + ".txt", ordered_points, delimiter=',',  fmt='%.8f')
-            

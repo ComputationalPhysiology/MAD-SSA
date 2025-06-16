@@ -3,9 +3,9 @@ requires = ["setuptools>=61.2", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ventric_pca"
+name = "ventricshape"
 version = "0.1.0"
-description = "Ventricular point-cloud analysis"
+description = "A toolkit for 3D ventricular shape analysis"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
@@ -40,9 +40,10 @@ test = [
 ]
 
 [project.scripts]
-ventric-pca-pipeline    = "ventric_pca.main:main"
-ventric-pca-pc = "ventric_pca.main_pc:main"
-
+ventricshape-pipeline    = "ventricshape.main:main"
+ventricshape-pc = "ventricshape.main_pc:main"
+ventricshape-alignment = "ventricshape.alignment:main"
+ventricshape-pca = "ventricshape.pca:main"
 [tool.setuptools]
 package-dir = { "" = "src" }
 
