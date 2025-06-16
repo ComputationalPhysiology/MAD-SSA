@@ -14,7 +14,7 @@ def main(
     subject_list = os.listdir(input_directory)
     subject_list = [subject for subject in subject_list if subject != ".DS_Store"]
 
-    process_all_subjects(subject_list, input_directory, output_directory)
+    process_all_subjects(subject_list, input_directory, output_directory,plot=False)
 
 if __name__ == "__main__":
     main()

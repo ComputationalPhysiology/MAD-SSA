@@ -229,7 +229,7 @@ def remove_duplicates(endo_points_list):
     return endo_points_list_no_duplicates
 
 
-def process_all_subjects(subject_ids, input_dir, output_dir):
+def process_all_subjects(subject_ids, input_dir, output_dir, plot = False):
     os.makedirs(output_dir, exist_ok=True)
     
     for subject_id in subject_ids:
@@ -237,7 +237,8 @@ def process_all_subjects(subject_ids, input_dir, output_dir):
         out_plot = os.path.join(output_dir,"plots",subject_id)
         os.makedirs(out_plot, exist_ok=True)
         aligned_points_epi, aligned_points_endo, rv_new_rotated,centered_points_epi,centered_points_endo,centered_P_rv_new = process_subject(subject_id, input_dir, output_dir)
-        # visualize(aligned_points_epi, aligned_points_endo,rv_new_rotated, np.zeros((1, 3)),out_plot,centered_points_epi,centered_points_endo,centered_P_rv_new)
+        if plot:
+            visualize(aligned_points_epi, aligned_points_endo,rv_new_rotated, np.zeros((1, 3)),out_plot,centered_points_epi,centered_points_endo,centered_P_rv_new)
 
 
 

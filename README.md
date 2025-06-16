@@ -1,7 +1,7 @@
 # 3D Cardiac Statistical Shape Analysis Pipeline
 
 This project provides a complete pipeline for processing 3D cardiac medical imaging data, from initial segmentation masks to statistical shape analysis using Principal Component Analysis (PCA). The pipeline generates 3D point clouds from segmentations, aligns them, and then performs PCA to identify primary modes of shape variation. Additionally, it includes scripts to create 3D meshes and evaluate their accuracy against the original data.
-
+<!-- 
 ## 📜 Table of Contents
 
 - [Project Overview](#-project-overview)
@@ -43,8 +43,8 @@ Follow these instructions to set up and run the project on your local machine.
 
 ## ⚙️ Usage
 
-This section explains how to use the scripts to process your data.
-
+This section explains how to use the scripts to process your data. -->
+<!-- 
 ### Directory Structure
 
 The scripts expect a specific directory structure, which is configured in `config.py`. You should have the following directories:
@@ -98,4 +98,4 @@ You can control the smoothing level of the LAX curves for both the epicardium an
         }
     }
 }
-
+ -->

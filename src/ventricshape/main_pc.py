@@ -10,7 +10,7 @@ import shutil
 
 def run_analysis(
         name=None, 
-        data_directory=os.getcwd()+'/ES_files/',
+        data_directory=os.getcwd()+'/seg_files/',
         settings_dir=os.getcwd()+'/settings/', 
         outdir=os.getcwd()+'/results/', 
         mesh_quality='fine', 
@@ -60,7 +60,7 @@ def main(args=None):
     parser.add_argument(
         "-d",
         "--data_directory",
-        default=os.getcwd()+'/ES_files/',
+        default=os.getcwd()+'/seg_files/',
         type=Path,
         help="The directory where all the patients' data is stored.",
     )
