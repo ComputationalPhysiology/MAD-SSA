@@ -11,5 +11,6 @@ from . import meshing_utils
 from . import create_3d_mesh
 from . import create_point_cloud
 from . import main
+from . import main_pc
 from . import utils
 from . import pca
