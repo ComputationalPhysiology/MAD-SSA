@@ -5,7 +5,7 @@ from pathlib import Path
 import argparse
 import ventric_pca.config as config 
 from ventric_pca.utils import process_files_from_directory
-from create_point_cloud import process_patient
+from ventric_pca.create_point_cloud import process_patient
 import shutil  
 
 def main(args=None):
@@ -22,14 +22,14 @@ def main(args=None):
     parser.add_argument(
         "-d",
         "--data_directory",
-        default=config.ES_files_controls,
+        default=os.getcwd()+'/data/',
         type=Path,
         help="The directory where all the patients' data is stored.",
     )
     
     parser.add_argument(
         "--settings_dir",
-        default=config.SETTINGS_DIRECTORY,
+        default=os.getcwd()+'/settings/',
         type=Path,
         help="The settings directory where JSON files are stored.",
     )
@@ -58,8 +58,7 @@ def main(args=None):
     args = parser.parse_args(args)
 
     # Step 1: Process files to create settings
-    process_files_from_directory()
-
+    process_files_from_directory(directory_path=args.data_directory, settings_folder=args.settings_dir)
     # Step 2: Generate point clouds
     data_directory = args.data_directory
     settings_dir = args.settings_dir

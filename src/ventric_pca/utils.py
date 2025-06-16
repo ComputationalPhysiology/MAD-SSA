@@ -10,7 +10,7 @@ logger = get_logger()
 
 ###########################################################
 # Function to create patient settings JSON file
-def create_patient_settings(patient_name, lax_smooth_level_endo=None, lax_smooth_level_epi=None):
+def create_patient_settings(patient_name, settings_folder=None, lax_smooth_level_endo=None, lax_smooth_level_epi=None):
     default_settings = {
         "mesh": {
             "fine": {
@@ -36,8 +36,10 @@ def create_patient_settings(patient_name, lax_smooth_level_endo=None, lax_smooth
         default_settings["mesh"]["fine"]["lax_smooth_level_endo"] = lax_smooth_level_endo
     if lax_smooth_level_epi is not None:
         default_settings["mesh"]["fine"]["lax_smooth_level_epi"] = lax_smooth_level_epi
-
-    settings_folder = "/home/shared/controls/settings"
+    breakpoint()
+    if settings_folder is None:
+        settings_folder = "/home/shared/controls/settings"
+    
     os.makedirs(settings_folder, exist_ok=True)
 
     patient_file_path = os.path.join(settings_folder, f"{patient_name}.json")
@@ -47,7 +49,8 @@ def create_patient_settings(patient_name, lax_smooth_level_endo=None, lax_smooth
     print(f"Settings file created: {patient_file_path}")
 
 
-def process_files_from_directory(directory_path = "/home/shared/controls/ES_files_controls", lax_smooth_level_endo=None, lax_smooth_level_epi=None):
+def process_files_from_directory(directory_path = "/home/shared/controls/ES_files_controls", settings_folder=None, lax_smooth_level_endo=None, lax_smooth_level_epi=None):
+    breakpoint()
     if not os.path.exists(directory_path):
         print(f"Directory not found: {directory_path}")
         return
@@ -55,7 +58,7 @@ def process_files_from_directory(directory_path = "/home/shared/controls/ES_file
     for filename in os.listdir(directory_path):
         if filename[:3].isdigit():  
             patient_name = filename[:3]
-            create_patient_settings(patient_name)
+            create_patient_settings(patient_name, settings_folder)
             
 ########################################
 
