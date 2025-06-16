@@ -8,6 +8,48 @@ from ventric_pca.utils import process_files_from_directory
 from ventric_pca.create_point_cloud import process_patient
 import shutil  
 
+def run_analysis(
+        name=None, 
+        data_directory=os.getcwd()+'/data/',
+        settings_dir=os.getcwd()+'/settings/', 
+        outdir=os.getcwd()+'/results/', 
+        mesh_quality='fine', 
+        mask_flag=True):
+    
+    process_files_from_directory(directory_path=data_directory, settings_folder=settings_dir)
+    if name:
+        # Create folder for a single patient
+        patient_name = name
+        patient_folder = Path(outdir)/patient_name
+        patient_folder.mkdir(parents=True, exist_ok=True)
+
+        # Copy the corresponding .h5 file
+        h5_file = Path(data_directory) / f"{patient_name}_original_segmentation.h5"
+        if h5_file.exists():
+            shutil.copy(h5_file, patient_folder)
+        else:
+            print(f"Warning: .h5 file for patient {patient_name} not found.")
+        process_patient(name, data_directory, settings_dir, patient_folder, mesh_quality, mask_flag=True)
+        
+    else:
+        # Create folders for all patients
+        for filename in os.listdir(data_directory):
+            if filename.endswith(".h5") and filename[:3].isdigit():
+                patient_name = filename[:3]
+                patient_folder = Path(data_root)/patient_name
+        
+                results_folder = patient_folder/output_folder
+                
+                patient_folder.mkdir(parents=True, exist_ok=True)
+                results_folder.mkdir(parents=True, exist_ok=True)
+                h5_file = Path(data_directory) / f"{patient_name}_original_segmentation.h5"
+            if h5_file.exists():
+                shutil.copy(h5_file, patient_folder)
+            else:
+                print(f"Warning: .h5 file for patient {patient_name} not found.")
+            process_patient(patient_name, data_root, settings_dir, results_folder, mesh_quality, mask_flag=True)
+
+
 def main(args=None):
     parser = argparse.ArgumentParser()
 
@@ -50,57 +92,22 @@ def main(args=None):
 
     parser.add_argument(
         "-o",
-        "--output_folder",
-        default="00_results",
+        "--outdir",
+        default=os.getcwd()+'/results/',
         type=str,
         help="The result folder name that would be created in the directory of the sample.",
     )
     args = parser.parse_args(args)
 
-    # Step 1: Process files to create settings
-    process_files_from_directory(directory_path=args.data_directory, settings_folder=args.settings_dir)
-    # Step 2: Generate point clouds
+    name = args.name
     data_directory = args.data_directory
     settings_dir = args.settings_dir
-    output_folder = args.output_folder
+    outdir = args.outdir
     mesh_quality = args.mesh_quality
-    data_root = Path("/home/shared/controls/00_data")
+    mask_flag = args.mask
 
-    if args.name:
-        # Create folder for a single patient
-        patient_name = args.name
-        patient_folder = Path(data_root)/patient_name
-        
-        results_folder = patient_folder/output_folder
-        
-        patient_folder.mkdir(parents=True, exist_ok=True)
-        results_folder.mkdir(parents=True, exist_ok=True)
+    run_analysis(name, data_directory, settings_dir, outdir, mesh_quality, mask_flag)
 
-        # Copy the corresponding .h5 file
-        h5_file = Path(data_directory) / f"{patient_name}_original_segmentation.h5"
-        if h5_file.exists():
-            shutil.copy(h5_file, patient_folder)
-        else:
-            print(f"Warning: .h5 file for patient {patient_name} not found.")
-        process_patient(args.name, data_root, settings_dir, results_folder, mesh_quality, mask_flag=True)
-        
-    else:
-        # Create folders for all patients
-        for filename in os.listdir(data_directory):
-            if filename.endswith(".h5") and filename[:3].isdigit():
-                patient_name = filename[:3]
-                patient_folder = Path(data_root)/patient_name
-        
-                results_folder = patient_folder/output_folder
-                
-                patient_folder.mkdir(parents=True, exist_ok=True)
-                results_folder.mkdir(parents=True, exist_ok=True)
-                h5_file = Path(data_directory) / f"{patient_name}_original_segmentation.h5"
-            if h5_file.exists():
-                shutil.copy(h5_file, patient_folder)
-            else:
-                print(f"Warning: .h5 file for patient {patient_name} not found.")
-            process_patient(patient_name, data_root, settings_dir, results_folder, mesh_quality, mask_flag=True)
-
+    
 if __name__ == "__main__":
     main()

@@ -13,14 +13,14 @@ def load_settings(setting_dir, sample_name):
         settings = json.load(file)
     return settings
 
-def process_patient(sample_name, data_directory, settings_dir, output_folder, mesh_quality, mask_flag):
+def process_patient(sample_name, data_directory, settings_dir, patient_folder, mesh_quality, mask_flag):
     settings = load_settings(settings_dir, sample_name)
     mesh_settings = settings["mesh"][mesh_quality]
 
     sample_directory = data_directory / sample_name
   
     points_cloud_epi, points_cloud_endo = ventric_pca.meshing_utils.generate_pc(
-        mesh_settings, sample_directory, output_folder, mask_flag
+        mesh_settings, sample_directory, patient_folder, mask_flag
     )
 
     points_cloud_epi = np.vstack(points_cloud_epi)
