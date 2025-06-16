@@ -40,8 +40,8 @@ test = [
 ]
 
 [project.scripts]
-ventric-pca    = "ventric_pca.main:main"
-ventric-pca-pc = "ventric_pca.main_pc:main_pc"
+ventric-pca-pipeline    = "ventric_pca.main:main"
+ventric-pca-pc = "ventric_pca.main_pc:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
