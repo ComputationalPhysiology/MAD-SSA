@@ -3,7 +3,7 @@ import json
 import numpy as np
 import os
 from structlog import get_logger
-import meshing_utils
+import ventric_pca
 
 logger = get_logger()
 
@@ -19,7 +19,7 @@ def process_patient(sample_name, data_directory, settings_dir, output_folder, me
 
     sample_directory = data_directory / sample_name
   
-    points_cloud_epi, points_cloud_endo = meshing_utils.generate_pc(
+    points_cloud_epi, points_cloud_endo = ventric_pca.meshing_utils.generate_pc(
         mesh_settings, sample_directory, output_folder, mask_flag
     )
 

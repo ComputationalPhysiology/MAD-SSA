@@ -1,7 +1,7 @@
 
 import os 
-from utils import process_all_subjects
-from config import INPUT_DIRECTORY, OUTPUT_DIRECTORY
+from ventric_pca.utils import process_all_subjects
+from ventric_pca.config import INPUT_DIRECTORY, OUTPUT_DIRECTORY
 
 
 subject_list = os.listdir(INPUT_DIRECTORY)

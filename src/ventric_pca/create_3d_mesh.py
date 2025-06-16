@@ -2,23 +2,23 @@ from pathlib import Path
 import argparse
 import numpy as np
 import meshio
-import config
+import ventric_pca.config as config
 from structlog import get_logger
-import meshing_utils
+import ventric_pca
 import ventric_mesh.mesh_utils as mu
 
 logger = get_logger()
 
 def load_original_data(sample_directory):
-    h5_file_address = meshing_utils.located_h5(sample_directory)
+    h5_file_address = ventric_pca.meshing_utils.located_h5(sample_directory)
 
-    LVmask_raw, resolution_data = meshing_utils.read_data_h5_mask(h5_file_address.as_posix())
+    LVmask_raw, resolution_data = ventric_pca.meshing_utils.read_data_h5_mask(h5_file_address.as_posix())
     LVmask_raw = LVmask_raw[~np.all(LVmask_raw == 0, axis=(1, 2))]        
     resolution = resolution_data[0]
     slice_thickness = resolution_data[2]
     logger.info(f"Reading mask with slice thickness of {slice_thickness}mm and resolution of {resolution}mm")
         
-    LVmask = meshing_utils.close_apex(LVmask_raw)
+    LVmask = ventric_pca.meshing_utils.close_apex(LVmask_raw)
     logger.info("Mask is loaded and apex is closed")
 
     mask_epi, mask_endo = mu.get_endo_epi(LVmask)
@@ -191,8 +191,8 @@ def main(args=None) -> int:
             if delauny_flag:
                 outdir = outdir / "06_Mesh"
                 outdir.mkdir(exist_ok=True)
-                vertices_epi, faces_epi = meshing_utils.create_mesh_slice_by_slice(points_cloud_epi, scale=1.5)
-                vertices_endo, faces_endo = meshing_utils.create_mesh_slice_by_slice(points_cloud_endo, scale=1.5)
+                vertices_epi, faces_epi = ventric_pca.meshing_utils.create_mesh_slice_by_slice(points_cloud_epi, scale=1.5)
+                vertices_endo, faces_endo = ventric_pca.meshing_utils.create_mesh_slice_by_slice(points_cloud_endo, scale=1.5)
                 mesh_epi = mu.create_mesh(vertices_epi, faces_epi)
                 mesh_epi_filename = outdir / 'Mesh_epi.stl'
                 mesh_epi.save(mesh_epi_filename)
@@ -222,11 +222,11 @@ def main(args=None) -> int:
                         # If it’s some other exception, re-raise so we don’t mask a different issue
                         raise  
             else:
-                mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax, k_apex_epi=k_apex_epi_list[i], k_apex_endo=k_apex_endo_list[i])
+                mesh_epi_fname, mesh_endo_fname, _ = ventric_pca.meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax, k_apex_epi=k_apex_epi_list[i], k_apex_endo=k_apex_endo_list[i])
             # calculating the error between raw data and surfaces meshes of epi and endo
             resolution = 0
-            errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, points_cloud_epi[:-1], points_cloud_endo[:-1], outdir, resolution)
-            meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
+            errors_epi, errors_endo = ventric_pca.meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, points_cloud_epi[:-1], points_cloud_endo[:-1], outdir, resolution)
+            ventric_pca.meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
     else:
         sample_directory = data_directory / sample_name
        
@@ -241,20 +241,20 @@ def main(args=None) -> int:
         points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
         if delauny_flag:
             # Creating surface meshes based on delauny triangulation
-            mesh_epi_fname, mesh_endo_fname = meshing_utils.generate_mesh_delauny(points_cloud_epi, points_cloud_endo, outdir) 
+            mesh_epi_fname, mesh_endo_fname = ventric_pca.meshing_utils.generate_mesh_delauny(points_cloud_epi, points_cloud_endo, outdir) 
         else:
             # Creating 3D and surface meshes of epi, endo and base
-            mesh_epi_fname, mesh_endo_fname, _ = meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
+            mesh_epi_fname, mesh_endo_fname, _ = ventric_pca.meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
         # calculating the error between raw data and surfaces meshes of epi and endo
         if mid_voxel_flag:
             for arr in coords_epi:
                 arr[:,2] += -slice_thickness/2
             for arr in coords_endo:
                 arr[:,2] += -slice_thickness/2
-        errors_epi, errors_endo = meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
-        meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
+        errors_epi, errors_endo = ventric_pca.meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
+        ventric_pca.meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
         csv_file = Path(data_directory,"errors_summary.csv")
-        meshing_utils.save_errors_to_dataframe(csv_file, sample_name, errors_epi, errors_endo, resolution)
+        ventric_pca.meshing_utils.save_errors_to_dataframe(csv_file, sample_name, errors_epi, errors_endo, resolution)
     
 if __name__ == "__main__":
     main()

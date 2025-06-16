@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import config
+import ventric_pca.config as config
 import numpy as np
 import plotly.graph_objects as go
 

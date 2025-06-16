@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
-import config 
-from utils import process_files_from_directory
+import ventric_pca.config as config 
+from ventric_pca.utils import process_files_from_directory
 from create_point_cloud import process_patient
 import shutil  
 

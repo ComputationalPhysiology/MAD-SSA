@@ -7,7 +7,6 @@ A small package for ventricular pointcloud analysis.
 
 __version__ = "0.1.0"
 
-from . import get_rv
 from . import alignment
 from . import meshing_utils
 from . import create_3d_mesh

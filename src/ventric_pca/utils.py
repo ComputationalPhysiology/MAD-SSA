@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import ventric_mesh.mesh_utils as mu
 import plotly.graph_objects as go
-from get_com_rv import get_rv_point
+from ventric_pca.get_com_rv import get_rv_point
 from structlog import get_logger
 logger = get_logger()
 
