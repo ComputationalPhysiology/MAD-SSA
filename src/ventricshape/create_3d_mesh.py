@@ -2,7 +2,7 @@ from pathlib import Path
 import argparse
 import numpy as np
 import meshio
-import ventricshape.config as config
+import os
 from structlog import get_logger
 import ventricshape
 import ventric_mesh.mesh_utils as mu
@@ -11,7 +11,6 @@ logger = get_logger()
 
 def load_original_data(sample_directory):
     h5_file_address = ventricshape.meshing_utils.located_h5(sample_directory)
-
     LVmask_raw, resolution_data = ventricshape.meshing_utils.read_data_h5_mask(h5_file_address.as_posix())
     LVmask_raw = LVmask_raw[~np.all(LVmask_raw == 0, axis=(1, 2))]        
     resolution = resolution_data[0]
@@ -69,7 +68,7 @@ def main(args=None) -> int:
     parser.add_argument(
         "-d",
         "--data_directory",
-        default=config.INPUT_DIRECTORY,
+        default= os.getcwd() + '/seg_files/',
         type=Path,
         help="The directory where all the patients data stored.",
     )
@@ -142,7 +141,7 @@ def main(args=None) -> int:
     parser.add_argument(
         "-o",
         "--output_folder",
-        default="00_results",
+        default=os.getcwd()+'/results/',
         type=str,
         help="The result folder name that would be created in the directory of the sample.",
     )
@@ -228,31 +227,30 @@ def main(args=None) -> int:
             errors_epi, errors_endo = ventricshape.meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, points_cloud_epi[:-1], points_cloud_endo[:-1], outdir, resolution)
             ventricshape.meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
     else:
-        sample_directory = data_directory / sample_name
-       
+        
+        sample_directory =  Path(output_folder) / sample_name
         # Load raw data from mask and resolution
         coords_epi, coords_endo, resolution, slice_thickness = load_original_data(sample_directory)
         # Load the saved point cloud data
-        outdir = sample_directory / output_folder
-        points_cloud_epi = np.loadtxt(outdir / 'points_cloud_epi.csv', delimiter=',')
-        points_cloud_endo = np.loadtxt(outdir / 'points_cloud_endo.csv', delimiter=',')
+        points_cloud_epi = np.loadtxt(sample_directory / 'points_cloud_epi.csv', delimiter=',')
+        points_cloud_endo = np.loadtxt(sample_directory / 'points_cloud_endo.csv', delimiter=',')
         # Convering the np.array to list of np.array with number of z setions (slices)
         points_cloud_epi = convert_pc_to_stack(points_cloud_epi, num_z_sections=20)
         points_cloud_endo = convert_pc_to_stack(points_cloud_endo, num_z_sections=20)
         if delauny_flag:
             # Creating surface meshes based on delauny triangulation
-            mesh_epi_fname, mesh_endo_fname = ventricshape.meshing_utils.generate_mesh_delauny(points_cloud_epi, points_cloud_endo, outdir) 
+            mesh_epi_fname, mesh_endo_fname = ventricshape.meshing_utils.generate_mesh_delauny(points_cloud_epi, points_cloud_endo, sample_directory) 
         else:
             # Creating 3D and surface meshes of epi, endo and base
-            mesh_epi_fname, mesh_endo_fname, _ = ventricshape.meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, outdir, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
+            mesh_epi_fname, mesh_endo_fname, _ = ventricshape.meshing_utils.generate_3d_mesh(points_cloud_epi, points_cloud_endo, sample_directory, SurfaceMeshSizeEndo=SurfaceMeshSizeEndo, SurfaceMeshSizeEpi=SurfaceMeshSizeEpi, MeshSizeMin=VolumeMeshSizeMin, MeshSizeMax=VolumeMeshSizeMax)
         # calculating the error between raw data and surfaces meshes of epi and endo
         if mid_voxel_flag:
             for arr in coords_epi:
                 arr[:,2] += -slice_thickness/2
             for arr in coords_endo:
                 arr[:,2] += -slice_thickness/2
-        errors_epi, errors_endo = ventricshape.meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, outdir, resolution)
-        ventricshape.meshing_utils.export_error_stats(errors_epi, errors_endo, outdir, resolution)
+        errors_epi, errors_endo = ventricshape.meshing_utils.calculate_mesh_error(mesh_epi_fname, mesh_endo_fname, coords_epi, coords_endo, sample_directory, resolution)
+        ventricshape.meshing_utils.export_error_stats(errors_epi, errors_endo, sample_directory, resolution)
         csv_file = Path(data_directory,"errors_summary.csv")
         ventricshape.meshing_utils.save_errors_to_dataframe(csv_file, sample_name, errors_epi, errors_endo, resolution)
     

@@ -44,6 +44,7 @@ ventricshape-pipeline    = "ventricshape.main:main"
 ventricshape-pc = "ventricshape.main_pc:main"
 ventricshape-alignment = "ventricshape.alignment:main"
 ventricshape-pca = "ventricshape.pca:main"
+ventricshape-createmesh = "ventricshape.create_3d_mesh:main"
 [tool.setuptools]
 package-dir = { "" = "src" }
 
