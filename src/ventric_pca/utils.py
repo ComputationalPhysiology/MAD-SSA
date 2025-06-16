@@ -36,7 +36,6 @@ def create_patient_settings(patient_name, settings_folder=None, lax_smooth_level
         default_settings["mesh"]["fine"]["lax_smooth_level_endo"] = lax_smooth_level_endo
     if lax_smooth_level_epi is not None:
         default_settings["mesh"]["fine"]["lax_smooth_level_epi"] = lax_smooth_level_epi
-    breakpoint()
     if settings_folder is None:
         settings_folder = "/home/shared/controls/settings"
     
@@ -50,7 +49,6 @@ def create_patient_settings(patient_name, settings_folder=None, lax_smooth_level
 
 
 def process_files_from_directory(directory_path = "/home/shared/controls/ES_files_controls", settings_folder=None, lax_smooth_level_endo=None, lax_smooth_level_epi=None):
-    breakpoint()
     if not os.path.exists(directory_path):
         print(f"Directory not found: {directory_path}")
         return
