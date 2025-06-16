@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ventric_pca"
+version = "0.1.0"
+description = "Ventricular point-cloud analysis"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name = "Giulia Monopoli", email = "giulia@simula.no" },
+  { name = "Javad Sadeghinia", email = "mjsadeghinia@outlook.com" },
+]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Scientific/Engineering :: Visualization",
+]
+keywords = ["ventricule", "point-cloud", "mesh"]
+urls = { Homepage = "https://github.com/ComputationalPhysiology/MAD-SSA/tree/clean_code" }
+
+dependencies = [
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "matplotlib",
+  "plotly",
+  "meshio",
+  "open3d",
+  "h5py",
+  "structlog",
+  "opencv-python",
+  "ventric-mesh @ git+https://github.com/mjsadeghinia/VentricMesh.git",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+]
+
+[project.scripts]
+ventric-pca    = "ventric_pca.main:main"
+ventric-pca-pc = "ventric_pca.main_pc:main_pc"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
