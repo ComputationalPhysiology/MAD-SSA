@@ -26,15 +26,9 @@ keywords = ["ventricule", "point-cloud", "mesh"]
 urls = { Homepage = "https://github.com/ComputationalPhysiology/MAD-SSA/tree/clean_code" }
 
 dependencies = [
-  "numpy",
   "pandas",
   "scikit-learn",
-  "matplotlib",
-  "plotly",
   "meshio",
-  "open3d",
-  "h5py",
-  "structlog",
   "opencv-python",
   "ventric-mesh @ git+https://github.com/mjsadeghinia/VentricMesh.git",
 ]
