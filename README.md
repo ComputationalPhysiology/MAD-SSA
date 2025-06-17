@@ -1,6 +1,34 @@
-# 3D Cardiac Statistical Shape Analysis Pipeline
+# ventricshape
 
-This project provides a complete pipeline for processing 3D cardiac medical imaging data, from initial segmentation masks to statistical shape analysis using Principal Component Analysis (PCA). The pipeline generates 3D point clouds from segmentations, aligns them, and then performs PCA to identify primary modes of shape variation. Additionally, it includes scripts to create 3D meshes and evaluate their accuracy against the original data.
+`ventricshape` is an open-source toolkit for 3D ventricular shape analysis from cardiac magnetic resonance short axis view medical images.  
+It provides an end-to-end pipeline for generating, aligning, and analyzing ventricular point clouds, including principal component analysis (PCA) and mesh generation.  
+- Source code: https://github.com/ComputationalPhysiology/MAD-SSA.git
+- Documentation: https://computationalphysiology.github.io/MAD-SSA/
+
+## Install
+Install with pip
+```
+python3 -m pip install ventricshape
+```
+## Citing
+If you use `ventricshape` in your research project we would appreciate if you could use the following citation
+```
+@article{,
+    doi = {},
+    url = {},
+    year = {2024},
+    publisher = {},
+    volume = {},
+    number = {},
+    pages = {},
+    author = {Giulia Monopoli et al.},
+    title = {},
+    journal = {}
+}
+```
+
+## License
+MIT
 <!-- 
 ## 📜 Table of Contents
 
