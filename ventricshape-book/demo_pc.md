@@ -1,6 +1,6 @@
 #  Demo: Generate a Point Cloud from a Single Patient Segmentation
 
-This demo shows how to use the `ventricshape-pc` CLI tool to generate **epicardial** and **endocardial** point clouds from `.h5` segmentation files.
+This demo shows how to use the `saxomode-pc` CLI tool to generate **epicardial** and **endocardial** point clouds from `.h5` segmentation files.
 We use a publicly available dataset available in https://www.ub.edu/mnms-2/.
 
 ---
@@ -61,7 +61,7 @@ You may manually fine-tune these parameters:
 To process a segmentation file for patient `001`:
 
 ```bash
-ventricshape-pc --n 001
+saxomode-pc --n 001
 ```
 
 This will:
@@ -88,7 +88,7 @@ You can open the images in these folders to visually inspect each step of the pi
 To verify  alignment with the original segmentation, generate a mesh:
 
 ```bash
-ventricshape-createmesh --n 001
+saxomode-createmesh --n 001
 ```
 
 This generates:

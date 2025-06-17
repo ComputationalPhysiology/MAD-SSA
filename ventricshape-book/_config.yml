@@ -1,5 +1,5 @@
-title: ventricshape Demos
-author: ventricshape contributors
+title: saxomode Demos
+author: saxomode contributors
 logo: null
 only_build_toc_files: true
 repository:
@@ -8,3 +8,4 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+logo: logo.png
