@@ -1,7 +1,9 @@
-# ventricshape: 3D Ventricular Shape Analysis Toolkit
+# ventricshape
 
-Welcome to the documentation and demos for `ventricshape`, a command-line toolkit for 3D ventricular shape processing using point clouds and PCA.
-
+`ventricshape` is an open-source toolkit for 3D ventricular shape analysis from cardiac magnetic resonance short axis view medical images.  
+It provides an end-to-end pipeline for generating, aligning, and analyzing ventricular point clouds, including principal component analysis (PCA) and mesh generation.  
+- Source code: https://github.com/ComputationalPhysiology/MAD-SSA.git
+- Documentation: https://computationalphysiology.github.io/MAD-SSA/
 ## 📋 Available Demos
 
 - [Generate Point Cloud](demo_pc.md)

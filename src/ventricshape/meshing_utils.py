@@ -70,7 +70,7 @@ def close_apex(LVmask):
 
 
 def located_h5(data_address):
-    breakpoint()
+    
     h5_files = list(data_address.glob("*.h5"))
     if len(h5_files) != 1:
         logger.error("Data folder must contain exactly 1 .mat file.")

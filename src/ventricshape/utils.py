@@ -48,7 +48,7 @@ def create_patient_settings(patient_name, settings_folder=None, lax_smooth_level
     print(f"Settings file created: {patient_file_path}")
 
 
-def process_files_from_directory(directory_path = "/home/shared/controls/ES_files_controls", settings_folder=None, lax_smooth_level_endo=None, lax_smooth_level_epi=None):
+def process_files_from_directory(directory_path, settings_folder=None, lax_smooth_level_endo=None, lax_smooth_level_epi=None):
     if not os.path.exists(directory_path):
         print(f"Directory not found: {directory_path}")
         return

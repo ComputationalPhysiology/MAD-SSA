@@ -1,81 +1,94 @@
 # 🧪 Demo: Generate a Point Cloud from a Single Patient Segmentation
 
-This demo shows how to use the `ventricshape-pc` command-line tool to create an epicardial and endocardial point cloud from a `.h5` segmentation file.
-
+This demo shows how to use the `ventricshape-pc` CLI tool to generate **epicardial** and **endocardial** point clouds from `.h5` segmentation files.
+We use a publicly available dataset available in https://www.ub.edu/mnms-2/.
 ---
 
-## 📁 Folder Setup
+## 📁 Folder Structure
 
 ```
 project-root/
 ├── seg_files/
-│   └── patient001.h5
-├── settings/
-│   └── patient001.json
+│   ├── 001.h5
+│   └── 002.h5
 ```
 
-## 📌 Required Segmentation File Format
-
-Each `.h5` file in `seg_files/` must contain:
-
-- `'LV_mask'`: shape `[slices, height, width]` — 3D binary mask of the **left ventricle**
-- `'RV_mask'`: shape `[slices, height, width]` — 3D binary mask of the **right ventricle**
-- `'resolution'`: `[px, py, pz]` — voxel spacing in mm
+Each `.h5` file corresponds to one patient.
 
 ---
 
-## ⚙️ Example Settings File: `settings/patient001.json`
+## 📌 Required `.h5` File Format
+
+Each `.h5` file in `seg_files/` must contain:
+
+- `LV_mask`: shape `[slices, height, width]` — binary left ventricle mask  
+- `RV_mask`: shape `[slices, height, width]` — binary right ventricle mask  
+- `resolution`: `[px, py, pz]` — voxel spacing in millimeters
+
+---
+
+## ⚙️ Settings File: `settings/001.json`
+
+A settings file is automatically generated during the pipeline run. It contains point cloud fitting parameters:
 
 ```json
 {
   "mesh": {
-    "high": {
-      "smoothing": {
-        "sigma_space": 3,
-        "sigma_color": 3,
-        "iterations": 5
-      },
-      "sampling_rate": 2
+    "fine": {
+      "lax_smooth_level_epi": 80,
+      "lax_smooth_level_endo": 50,
+      "...": "..."
     }
   }
 }
 ```
 
-> 🔧 **Smoothing Parameters**:
->
-> - `sigma_space`: spatial smoothness (higher = smoother mesh)
-> - `sigma_color`: edge-preserving smoothness
-> - `iterations`: number of smoothing passes
+You may manually fine-tune these parameters:
+
+| Parameter              | Description                                 |
+|------------------------|---------------------------------------------|
+| `lax_smooth_level_epi` | Smoothness of epicardial LAX curves         |
+| `lax_smooth_level_endo`| Smoothness of endocardial LAX curves        |
+
+> Increasing these values produces smoother curves (useful for correcting motion or misalignment).
 
 ---
 
-## 🚀 Run the Demo
+## 🔍 Check  Fitting Accuracy
+
+To verify  alignment with the original segmentation, generate a mesh:
 
 ```bash
-ventricshape-pc   --sample_name patient001   --settings_dir settings   --patient_folder seg_files   --mesh_quality high   --mask_flag True
+ventricshape-createmesh --n 001
+```
+
+This generates:
+- A `.vtk` mesh in: `results/001/06_Mesh/`
+- A `.msh` file
+- Diagnostic reports (fit quality, deviation from contours)
+
+You can open the mesh in [ParaView](https://www.paraview.org/) for inspection.
+
+
+---
+
+## 🚀 Run Point Cloud Generation
+
+To process a segmentation file for patient `001`:
+
+```bash
+ventricshape-pc --n 001
 ```
 
 This will:
-- Load `patient001.json`
-- Read the `.h5` segmentation
-- Generate:
-  - `points_cloud_epi.csv`
-  - `points_cloud_endo.csv` in `seg_files/`
+- Load `seg_files/001.h5`
+- Generate a settings file `settings/001.json` (if not already present)
+- Output:
+  - `results/001/points_cloud_epi.csv`
+  - `results/001/points_cloud_endo.csv`
 
 ---
 
-## ✅ Output Example
 
-```
-seg_files/
-├── patient001.h5
-├── points_cloud_epi.csv
-├── points_cloud_endo.csv
-```
 
----
 
-## 🔁 Customization
-
-- Use `"medium"` or `"low"` instead of `"high"` in the JSON for different mesh settings.
-- Adjust smoothing settings to balance detail vs. noise.
