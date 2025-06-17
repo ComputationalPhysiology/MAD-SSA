@@ -32,18 +32,22 @@ def run_analysis(
         
     else:
         process_files_from_directory(directory_path=data_directory, settings_folder=settings_dir)
-
+        
         for filename in os.listdir(data_directory):
             if filename.endswith(".h5") and filename[:3].isdigit():
                 patient_name = filename[:3]
+                
                 patient_folder = Path(outdir)/patient_name
                 patient_folder.mkdir(parents=True, exist_ok=True)
+                
                 h5_file = Path(data_directory) / f"{patient_name}_original_segmentation.h5"
-            if h5_file.exists():
-                shutil.copy(h5_file, patient_folder)
-            else:
-                print(f"Warning: .h5 file for patient {patient_name} not found.")
-            process_patient(patient_name, settings_dir, patient_folder, mesh_quality, mask_flag=True)
+                
+                if h5_file.exists():
+                    shutil.copy(h5_file, patient_folder)
+             
+                else:
+                    print(f"Warning: .h5 file for patient {patient_name} not found.")
+                process_patient(patient_name, settings_dir, patient_folder, mesh_quality, mask_flag=True)
 
 
 def main(args=None):
