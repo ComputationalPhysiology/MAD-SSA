@@ -28,7 +28,7 @@ jobs:
         run: python3 -m pip install ".[docs]"
 
       - name: Build docs
-        run: jupyter book build -W --keep-going ventricshape-book
+        run: jupyter book build -W --keep-going saxomode-book
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
