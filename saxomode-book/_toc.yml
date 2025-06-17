@@ -1,7 +1,8 @@
 format: jb-book
 root: README
 
-caption: Demos
-chapters:
-- file: demo_pc
-- file: demo_pipeline
+parts:
+  - caption: Demos
+    chapters:
+      - file: demo_pc
+      - file: demo_pipeline
