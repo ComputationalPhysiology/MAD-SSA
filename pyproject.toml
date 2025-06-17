@@ -38,6 +38,9 @@ dependencies = [
 test = [
   "pytest",
 ]
+docs = [
+  "jupyter-book"
+]
 
 [project.scripts]
 ventricshape-pipeline    = "ventricshape.main:main"
