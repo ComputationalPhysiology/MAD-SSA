@@ -1,3 +1,4 @@
+![](https://raw.githubusercontent.com/ComputationalPhysiology/MAD-SSA/main/saxomode-book/logo.png)
 # saxomode
 
 `saxomode` is an open-source toolkit for 3D ventricular shape analysis from cardiac magnetic resonance short axis view medical images.  
