@@ -2,3 +2,6 @@ title: ventricshape Demos
 author: ventricshape contributors
 logo: null
 only_build_toc_files: true
+html:
+  use_issues_button: true
+  use_repository_button: true
