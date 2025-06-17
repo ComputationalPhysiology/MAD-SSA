@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-      PUBLISH_DIR: ./ventricshape-book/_build/html
+      PUBLISH_DIR: ./saxomode-book/_build/html
 
 
     steps:
