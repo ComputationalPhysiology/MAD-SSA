@@ -39,7 +39,8 @@ test = [
   "pytest",
 ]
 docs = [
-  "jupyter-book"
+  "jupyter-book",
+  "jupyter",
 ]
 
 [project.scripts]
