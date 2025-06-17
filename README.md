@@ -9,7 +9,7 @@ It provides an end-to-end pipeline for generating, aligning, and analyzing ventr
 ## Install
 Install with pip
 ```
-python3 -m pip install saxomode
+python3 -m pip install git+https://github.com/ComputationalPhysiology/MAD-SSA.git
 ```
 ## Citing
 If you use `saxomode` in your research project we would appreciate if you could use the following citation
