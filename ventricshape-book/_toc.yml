@@ -1,5 +1,0 @@
-format: jb-book
-root: README
-chapters:
-  - file: demo_pc
-  - file: demo_pipeline
