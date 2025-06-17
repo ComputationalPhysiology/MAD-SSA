@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ventricshape"
+version = "0.1.0"
+description = "A toolkit for 3D ventricular shape analysis"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name = "Giulia Monopoli", email = "giulia@simula.no" },
+  { name = "Javad Sadeghinia", email = "mjsadeghinia@outlook.com" },
+]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Scientific/Engineering :: Visualization",
+]
+keywords = ["ventricule", "point-cloud", "mesh"]
+urls = { Homepage = "https://github.com/ComputationalPhysiology/MAD-SSA/tree/clean_code" }
+
+dependencies = [
+  "numpy==1.23",
+  "pandas==2.2.3",
+  "scikit-learn",
+  "meshio",
+  "opencv-python",
+  "ventric-mesh @ git+https://github.com/mjsadeghinia/VentricMesh.git",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+]
+docs = [
+  "jupyter-book",
+  "jupyter",
+]
+
+[project.scripts]
+ventricshape-pipeline    = "ventricshape.main:main"
+ventricshape-pc = "ventricshape.main_pc:main"
+ventricshape-alignment = "ventricshape.alignment:main"
+ventricshape-pca = "ventricshape.pca:main"
+ventricshape-createmesh = "ventricshape.create_3d_mesh:main"
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
