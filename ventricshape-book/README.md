@@ -11,7 +11,7 @@ Install with pip
 python3 -m pip install ventricshape
 ```
 
-## 📋 Available Demos
+##  Available Demos
 
 - [Generate Point Cloud](demo_pc.md)
 - [Run Full Pipeline](demo_pipeline.md)

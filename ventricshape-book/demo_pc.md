@@ -1,4 +1,4 @@
-# 🧪 Demo: Generate a Point Cloud from a Single Patient Segmentation
+#  Demo: Generate a Point Cloud from a Single Patient Segmentation
 
 This demo shows how to use the `ventricshape-pc` CLI tool to generate **epicardial** and **endocardial** point clouds from `.h5` segmentation files.
 We use a publicly available dataset available in https://www.ub.edu/mnms-2/.
@@ -28,7 +28,7 @@ Each `.h5` file in `seg_files/` must contain:
 
 ---
 
-## ⚙️ Settings File
+##  Settings File
 
 A settings file is automatically generated in `settings/`. It contains point cloud fitting parameters:
 
