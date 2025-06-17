@@ -2,9 +2,10 @@
 
 This demo shows how to use the `ventricshape-pc` CLI tool to generate **epicardial** and **endocardial** point clouds from `.h5` segmentation files.
 We use a publicly available dataset available in https://www.ub.edu/mnms-2/.
+
 ---
 
-## 📁 Folder Structure
+## Folder Structure
 
 ```
 project-root/
@@ -17,7 +18,7 @@ Each `.h5` file corresponds to one patient.
 
 ---
 
-## 📌 Required `.h5` File Format
+##  Required `.h5` File Format
 
 Each `.h5` file in `seg_files/` must contain:
 
@@ -27,9 +28,9 @@ Each `.h5` file in `seg_files/` must contain:
 
 ---
 
-## ⚙️ Settings File: `settings/001.json`
+## ⚙️ Settings File
 
-A settings file is automatically generated during the pipeline run. It contains point cloud fitting parameters:
+A settings file is automatically generated in `settings/`. It contains point cloud fitting parameters:
 
 ```json
 {
@@ -54,23 +55,6 @@ You may manually fine-tune these parameters:
 
 ---
 
-## 🔍 Check  Fitting Accuracy
-
-To verify  alignment with the original segmentation, generate a mesh:
-
-```bash
-ventricshape-createmesh --n 001
-```
-
-This generates:
-- A `.vtk` mesh in: `results/001/06_Mesh/`
-- A `.msh` file
-- Diagnostic reports (fit quality, deviation from contours)
-
-You can open the mesh in [ParaView](https://www.paraview.org/) for inspection.
-
-
----
 
 ## 🚀 Run Point Cloud Generation
 
@@ -87,8 +71,35 @@ This will:
   - `results/001/points_cloud_epi.csv`
   - `results/001/points_cloud_endo.csv`
 
+For each patient, a results folder is created (e.g., `results/001/`).  
+This folder contains several subfolders and files that help you check the quality of each processing step:
+
+- **01_Masks/**: Visualizations of the original segmentation masks and extracted contours for each slice.
+- **02_ShaxBSpline/**: Plots of the short-axis B-spline fits to the contours.
+- **03_LaxBSpline/**: Plots of the long-axis B-spline fits.
+- **04_Contours/**: **Overlay plots of the generated contours with respect to the original segmentation stack**—useful for visually checking the accuracy of the contour extraction and fitting.
+- **05_Point Cloud/**: 3D visualizations of the generated point clouds.
+
+You can open the images in these folders to visually inspect each step of the pipeline and ensure the results are as expected.
+
+---
+##  Check  Fitting Accuracy
+
+To verify  alignment with the original segmentation, generate a mesh:
+
+```bash
+ventricshape-createmesh --n 001
+```
+
+This generates:
+- A `.vtk` mesh in: `results/001/06_Mesh/`
+- A `.msh` file
+- Diagnostic reports (fit quality, deviation from contours)
+
+You can open the mesh in [ParaView](https://www.paraview.org/) for inspection.
 
 
+---
 
 
 
