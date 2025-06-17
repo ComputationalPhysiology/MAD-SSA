@@ -2,6 +2,9 @@ title: ventricshape Demos
 author: ventricshape contributors
 logo: null
 only_build_toc_files: true
+repository:
+  url: https://github.com/ComputationalPhysiology/MAD-SSA.git # Online location of your book
+  branch: main
 html:
   use_issues_button: true
   use_repository_button: true
