@@ -1,6 +1,5 @@
 title: saxomode Demos
 author: saxomode contributors
-logo: null
 only_build_toc_files: true
 repository:
   url: https://github.com/ComputationalPhysiology/MAD-SSA.git # Online location of your book
