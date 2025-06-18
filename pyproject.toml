@@ -3,7 +3,7 @@ requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ventricshape"
+name = "saxomode"
 version = "0.1.0"
 description = "A toolkit for 3D ventricular shape analysis"
 readme = "README.md"
@@ -44,11 +44,11 @@ docs = [
 ]
 
 [project.scripts]
-ventricshape-pipeline    = "ventricshape.main:main"
-ventricshape-pc = "ventricshape.main_pc:main"
-ventricshape-alignment = "ventricshape.alignment:main"
-ventricshape-pca = "ventricshape.pca:main"
-ventricshape-createmesh = "ventricshape.create_3d_mesh:main"
+saxomode-pipeline    = "saxomode.main:main"
+saxomode-pc = "saxomode.main_pc:main"
+saxomode-alignment = "saxomode.alignment:main"
+saxomode-pca = "saxomode.pca:main"
+saxomode-createmesh = "saxomode.create_3d_mesh:main"
 [tool.setuptools]
 package-dir = { "" = "src" }
 
