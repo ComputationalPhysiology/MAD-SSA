@@ -2,14 +2,14 @@
 
 This demo will show how to run the entire shape analysis pipeline using the single command-line tool:
 
-- `ventricshape-pipeline`
+- `saxomode-pipeline`
 
 ## Usage
 
 Simply run the following command in your terminal:
 
 ```bash
-ventricshape-pipeline
+saxomode-pipeline
 ```
 
 This will sequentially execute all steps:
