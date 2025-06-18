@@ -17,13 +17,14 @@ If you use `saxomode` in your research project we would appreciate if you could 
 @article{,
     doi = {},
     url = {},
-    year = {2024},
+    year = {2025},
     publisher = {},
     volume = {},
     number = {},
     pages = {},
-    author = {Giulia Monopoli et al.},
-    title = {},
+    author = {Monopoli et al.},
+    title = {Arrhythmic Mitral Valve Syndrome: Insights
+from Left Ventricular End-systolic Shape Analysis},
     journal = {}
 }
 ```
