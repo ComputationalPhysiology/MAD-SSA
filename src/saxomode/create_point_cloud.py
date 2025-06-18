@@ -8,7 +8,7 @@ import saxomode
 logger = get_logger()
 
 def load_settings(setting_dir, sample_name):
-    settings_fname = setting_dir / f"{sample_name}.json"
+    settings_fname = Path(setting_dir) / f"{sample_name}.json"
     with open(settings_fname, "r") as file:
         settings = json.load(file)
     return settings
