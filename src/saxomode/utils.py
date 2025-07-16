@@ -105,64 +105,6 @@ def align_y_axis_to_rv_new(P_origin, P_rv_new, points):
     return points @ R_z.T, P_rv_new @ R_z.T
 
 
-def process_subject(subject_id, input_dir, output_dir):
-    print(subject_id)
-
-    points_epi_file= os.path.join(input_dir,f"{subject_id}/points_cloud_epi.csv")
-    points_endo_file = os.path.join(input_dir,f"{subject_id}/points_cloud_endo.csv")
-  
-  
-    points_cloud_epi = np.array(pd.read_csv(points_epi_file,header=None))
-    points_cloud_endo = np.array(pd.read_csv(points_endo_file,header=None))
-    if points_cloud_epi.shape[0] == 0 or points_cloud_endo.shape[0] == 0:
-        print(f"Problem subject {subject_id}: Empty point clouds.")
-    elif points_cloud_epi.shape[0] != 801 and  points_cloud_endo.shape[0]!=801:
-        print(f"Problem subject {subject_id}: Different number of points in epi and endo.")
-   
-    com = np.mean(points_cloud_epi, axis=0)
-    P_origin = np.array([com])
-    P_rv = np.array([get_rv_point(input_dir,subject_id)])
-
-    
-    z_axis = np.array([[0, 0, 1]])
-
-    P_rv_new = find_rv_ortho(P_rv, P_origin, z_axis)
-    
-    centered_points_epi = points_cloud_epi - P_origin
-    centered_points_endo = points_cloud_endo - P_origin
-    centered_P_rv_new = P_rv_new - P_origin
-
-    aligned_points_epi, rv_new_rotated = align_y_axis_to_rv_new(np.zeros_like(P_origin), centered_P_rv_new, centered_points_epi)
-    aligned_points_endo, _ = align_y_axis_to_rv_new(np.zeros_like(P_origin), centered_P_rv_new, centered_points_endo)
-    merged_point_cloud = np.concatenate(( aligned_points_epi,aligned_points_endo), axis=0)
-    points_list = convert_pc_to_stack(merged_point_cloud, num_z_sections=20)
-    output_file = os.path.join(output_dir, f"{subject_id}_merged_points.txt")
-    apex = points_list.pop(-1)
-    points_list = remove_duplicates(points_list)
-    tck_endo = mu.get_shax_from_coords(points_list, 0.0)
-    ordered_points = mu.get_sample_points_from_shax(tck_endo, 40)
-    # plt.scatter(points_list[0][:, 0], points_list[0][:, 1], color="y")
-    # plt.scatter(points_list[0][:5, 0], points_list[0][:5, 1], color="r")
-
-    # # print(f"Number of points in ordered_points: {ordered_points.shape}")
-
-    # plt.scatter(ordered_points[0][:5, 0], ordered_points[0][:5, 1], color="b")
-    # plt.savefig("test.png")
-    # exit()
-    ordered_points.append(apex)
-    ordered_points = np.vstack(ordered_points)
-    np.savetxt(output_file, merged_point_cloud, fmt='%.6f', delimiter=',')
-
-   
-    # np.savetxt(outname.as_posix() + ".txt", ordered_points, delimiter=',',  fmt='%.8f')
-    # np.savetxt(output_file_epi, aligned_points_epi, fmt='%.6f', delimiter=',')
-    # np.savetxt(output_file_endo, aligned_points_endo, fmt='%.6f', delimiter=',')
-    # print(f"Aligned points saved to {output_file_epi}")
-    # print(f"Aligned points saved to {output_file_endo}")
-    print(f"Aligned points saved to {output_file}")
-
-    return aligned_points_epi,aligned_points_endo, rv_new_rotated,centered_points_epi,centered_points_endo,centered_P_rv_new
-
 
 def visualize(aligned_points,aligned_points_endo, rv_new_rotated, P_origin,output_dir,centered_points_epi,centered_points_endo,centered_P_rv_new):
     fig = go.Figure()
@@ -227,6 +169,84 @@ def remove_duplicates(endo_points_list):
         if unique_points.shape[0]<points.shape[0]:
             logger.warning("Several unique points are removed...")
     return endo_points_list_no_duplicates
+
+
+def process_subject(subject_id, input_dir, output_dir):
+    print(subject_id)
+
+    points_epi_file= os.path.join(input_dir,f"{subject_id}/points_cloud_epi.csv")
+    points_endo_file = os.path.join(input_dir,f"{subject_id}/points_cloud_endo.csv")
+  
+  
+    points_cloud_epi = np.array(pd.read_csv(points_epi_file,header=None))
+    points_cloud_endo = np.array(pd.read_csv(points_endo_file,header=None))
+    if points_cloud_epi.shape[0] == 0 or points_cloud_endo.shape[0] == 0:
+        print(f"Problem subject {subject_id}: Empty point clouds.")
+    elif points_cloud_epi.shape[0] != 801 and  points_cloud_endo.shape[0]!=801:
+        print(f"Problem subject {subject_id}: Different number of points in epi and endo.")
+   
+    com = np.mean(points_cloud_epi, axis=0)
+    P_origin = np.array([com])
+    P_rv = np.array([get_rv_point(input_dir,subject_id)])
+
+    
+    z_axis = np.array([[0, 0, 1]])
+
+    P_rv_new = find_rv_ortho(P_rv, P_origin, z_axis)
+    
+    centered_points_epi = points_cloud_epi - P_origin
+    centered_points_endo = points_cloud_endo - P_origin
+    centered_P_rv_new = P_rv_new - P_origin
+
+    aligned_points_epi, rv_new_rotated = align_y_axis_to_rv_new(np.zeros_like(P_origin), centered_P_rv_new, centered_points_epi)
+    aligned_points_endo, _ = align_y_axis_to_rv_new(np.zeros_like(P_origin), centered_P_rv_new, centered_points_endo)
+    # merged_point_cloud = np.concatenate(( aligned_points_epi,aligned_points_endo), axis=0)
+    
+    # points_list = convert_pc_to_stack(merged_point_cloud, num_z_sections=20)
+    # output_file = os.path.join(output_dir, f"{subject_id}_merged_points.txt")
+    # apex = points_list.pop(-1)
+    # points_list = remove_duplicates(points_list)
+    # tck_endo = mu.get_shax_from_coords(points_list, 0.0)
+    # ordered_points = mu.get_sample_points_from_shax(tck_endo, 40)
+
+
+    aligned_points_epi = convert_pc_to_stack(aligned_points_epi, num_z_sections=20)
+    output_file = os.path.join(output_dir, f"{subject_id}_merged_points.txt")
+    apex = aligned_points_epi.pop(-1)
+    points_list_epi = remove_duplicates(aligned_points_epi)
+    tck_epi = mu.get_shax_from_coords(points_list_epi, 0.0)
+    ordered_points_epi = mu.get_sample_points_from_shax(tck_epi, 40)
+    ordered_points_epi.append(apex)
+    ordered_points_epi = np.vstack(ordered_points_epi)
+
+    aligned_points_endo = convert_pc_to_stack(aligned_points_endo, num_z_sections=20)
+    apex_endo = aligned_points_endo.pop(-1)
+    points_list_endo = remove_duplicates(aligned_points_endo)
+    tck_endo = mu.get_shax_from_coords(points_list_endo, 0.0)
+    ordered_points_endo = mu.get_sample_points_from_shax(tck_endo, 40)
+    ordered_points_endo.append(apex_endo)
+    merged_point_cloud = np.vstack((ordered_points_epi, ordered_points_endo))
+    # plt.scatter(points_list[0][:, 0], points_list[0][:, 1], color="y")
+    # plt.scatter(points_list[0][:5, 0], points_list[0][:5, 1], color="r")
+
+    # # print(f"Number of points in ordered_points: {ordered_points.shape}")
+
+    # plt.scatter(ordered_points[0][:5, 0], ordered_points[0][:5, 1], color="b")
+    # plt.savefig("test.png")
+    # exit()
+    # ordered_points.append(apex)
+    # ordered_points = np.vstack(ordered_points)
+    np.savetxt(output_file, merged_point_cloud, fmt='%.6f', delimiter=',')
+
+   
+    # np.savetxt(outname.as_posix() + ".txt", ordered_points, delimiter=',',  fmt='%.8f')
+    # np.savetxt(output_file_epi, aligned_points_epi, fmt='%.6f', delimiter=',')
+    # np.savetxt(output_file_endo, aligned_points_endo, fmt='%.6f', delimiter=',')
+    # print(f"Aligned points saved to {output_file_epi}")
+    # print(f"Aligned points saved to {output_file_endo}")
+    print(f"Aligned points saved to {output_file}")
+
+    return aligned_points_epi,aligned_points_endo, rv_new_rotated,centered_points_epi,centered_points_endo,centered_P_rv_new
 
 
 def process_all_subjects(subject_ids, input_dir, output_dir, plot = False):
