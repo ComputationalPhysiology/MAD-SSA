@@ -14,18 +14,13 @@ python3 -m pip install git+https://github.com/ComputationalPhysiology/MAD-SSA.gi
 ## Citing
 If you use `saxomode` in your research project we would appreciate if you could use the following citation
 ```
-@article{,
-    doi = {},
-    url = {},
-    year = {2025},
-    publisher = {},
-    volume = {},
-    number = {},
-    pages = {},
-    author = {Monopoli et al.},
-    title = {Arrhythmic Mitral Valve Syndrome: Insights
-from Left Ventricular End-systolic Shape Analysis},
-    journal = {}
+@inproceedings{monopoli2025arrhythmic,
+  title={Arrhythmic Mitral Valve Syndrome: Insights from Left Ventricular End-Systolic Shape Analysis},
+  author={Monopoli, Giulia and Sadeghinia, Mohammad Javad and Westrum Aabel, Eivind and Ribe, Margareth and Castrini, Anna Isotta and Hasselberg, Nina and Bugge, Cecilie and Five, Christian and Haugaa, Kristina and Balaban, Gabriel and others},
+  booktitle={International Conference on Functional Imaging and Modeling of the Heart},
+  pages={26--36},
+  year={2025},
+  organization={Springer}
 }
 ```
 
