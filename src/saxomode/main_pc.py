@@ -104,7 +104,7 @@ def main(args=None):
         help="assign new smoothing factor for lax epi",
     )
     parser.add_argument(
-        "-sfedno",
+        "-sfendo",
         action="store_true",
         help="assign new smoothing factor for lax endo",
     )
