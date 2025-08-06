@@ -117,7 +117,7 @@ def main(args=None):
     mesh_quality = args.mesh_quality
     mask_flag = args.mask
     sf_epi = args.sfepi
-    sf_endo = args.sfedno
+    sf_endo = args.sfendo
 
     run_analysis(name, data_directory, settings_dir, outdir, mesh_quality, mask_flag, sf_epi, sf_endo)
 
