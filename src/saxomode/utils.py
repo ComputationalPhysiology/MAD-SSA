@@ -108,6 +108,14 @@ def align_y_axis_to_rv_new(P_origin, P_rv_new, points):
 
 def visualize(aligned_points,aligned_points_endo, rv_new_rotated, P_origin,output_dir,centered_points_epi,centered_points_endo,centered_P_rv_new):
     fig = go.Figure()
+    aligned_points = np.asarray(aligned_points)
+    aligned_points_endo = np.asarray(aligned_points_endo)
+    centered_points_epi = np.asarray(centered_points_epi)
+    centered_points_endo = np.asarray(centered_points_endo)
+    centered_P_rv_new = np.asarray(centered_P_rv_new)
+    rv_new_rotated = np.asarray(rv_new_rotated)
+    P_origin = np.asarray(P_origin)
+
     fig.add_trace(go.Scatter3d(
         x=aligned_points[:, 0], y=aligned_points[:, 1], z=aligned_points[:, 2],
         mode='markers', marker=dict(color='blue', size=5), name='Aligned epi Points'
@@ -225,7 +233,19 @@ def process_subject(subject_id, input_dir, output_dir):
     tck_endo = mu.get_shax_from_coords(points_list_endo, 0.0)
     ordered_points_endo = mu.get_sample_points_from_shax(tck_endo, 40)
     ordered_points_endo.append(apex_endo)
+ 
+ 
+
+    ordered_points_endo = [arr.reshape(-1, 3) for arr in ordered_points_endo]  # ensure all are 2D
+    ordered_points_endo = np.vstack(ordered_points_endo)  # shape (N, 3)
+    ordered_points_epi = [arr.reshape(-1, 3) for arr in ordered_points_epi]
+    ordered_points_epi = np.vstack(ordered_points_epi)
+
+    print("ordered_points_epi shape:", ordered_points_epi.shape)
+    print("ordered_points_endo shape:", ordered_points_endo.shape)
+
     merged_point_cloud = np.vstack((ordered_points_epi, ordered_points_endo))
+    # merged_point_cloud = np.vstack((ordered_points_epi, ordered_points_endo))
     # plt.scatter(points_list[0][:, 0], points_list[0][:, 1], color="y")
     # plt.scatter(points_list[0][:5, 0], points_list[0][:5, 1], color="r")
 
@@ -249,7 +269,7 @@ def process_subject(subject_id, input_dir, output_dir):
     return aligned_points_epi,aligned_points_endo, rv_new_rotated,centered_points_epi,centered_points_endo,centered_P_rv_new
 
 
-def process_all_subjects(subject_ids, input_dir, output_dir, plot = False):
+def process_all_subjects(subject_ids, input_dir, output_dir, plot = True):
     os.makedirs(output_dir, exist_ok=True)
     
     for subject_id in subject_ids:
