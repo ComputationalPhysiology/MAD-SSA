@@ -14,9 +14,9 @@ def run_analysis(
         outdir=os.getcwd()+'/results/', 
         mesh_quality='fine', 
         mask_flag=True,
-        sf_epi=False,
-        sf_endo=False):
-    
+        sf_epi=None,
+        sf_endo=None):
+
     if name:
         
         patient_name = name
@@ -99,14 +99,16 @@ def main(args=None):
         help="The result folder name that would be created in the directory of the sample.",
     )
     parser.add_argument(
-        "-sfepi",
-        action="store_true",
-        help="assign new smoothing factor for lax epi",
+        "--sfepi",
+        type=int,
+        default=None,
+        help="Smoothing factor for lax epi",
     )
     parser.add_argument(
-        "-sfendo",
-        action="store_true",
-        help="assign new smoothing factor for lax endo",
+        "--sfendo",
+        type=int,
+        default=None,
+        help="Smoothing factor for lax endo",
     )
     args = parser.parse_args(args)
 
