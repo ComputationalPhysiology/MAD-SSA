@@ -13,12 +13,14 @@ def run_analysis(
         settings_dir=os.getcwd()+'/settings/', 
         outdir=os.getcwd()+'/results/', 
         mesh_quality='fine', 
-        mask_flag=True):
+        mask_flag=True,
+        sf_epi=False,
+        sf_endo=False):
     
     if name:
         
         patient_name = name
-        create_patient_settings(patient_name, settings_dir)
+        create_patient_settings(patient_name, settings_dir,lax_smooth_level_endo=sf_endo, lax_smooth_level_epi=sf_epi)
         patient_folder = Path(outdir)/patient_name
         patient_folder.mkdir(parents=True, exist_ok=True)
         h5_file = Path(data_directory) / f"{patient_name}_original_segmentation.h5"
@@ -96,6 +98,16 @@ def main(args=None):
         type=str,
         help="The result folder name that would be created in the directory of the sample.",
     )
+    parser.add_argument(
+        "-sfepi",
+        action="store_true",
+        help="assign new smoothing factor for lax epi",
+    )
+    parser.add_argument(
+        "-sfedno",
+        action="store_true",
+        help="assign new smoothing factor for lax endo",
+    )
     args = parser.parse_args(args)
 
     name = args.name
@@ -104,8 +116,10 @@ def main(args=None):
     outdir = args.outdir
     mesh_quality = args.mesh_quality
     mask_flag = args.mask
+    sf_epi = args.sfepi
+    sf_endo = args.sfedno
 
-    run_analysis(name, data_directory, settings_dir, outdir, mesh_quality, mask_flag)
+    run_analysis(name, data_directory, settings_dir, outdir, mesh_quality, mask_flag, sf_epi, sf_endo)
 
     
 if __name__ == "__main__":
