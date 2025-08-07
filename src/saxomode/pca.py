@@ -335,15 +335,53 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
         # magnitudes = compute_heat_map(deformation)
 
         # plot_heat_map(magnitudes, avg_coords, output_path4)
+# def main():
+#     """
+#     Main function to run PCA decomposition and visualization.
+#     """
+#     subject_list = os.listdir(os.getcwd()+'/results/')
+#     subject_list = [subject for subject in subject_list if subject != ".DS_Store"]
+#     PCA_directory = os.path.join(os.getcwd(), 'PCA_results')
+#     os.makedirs(PCA_directory, exist_ok=True)
+#     pca_decomp(subject_list,os.getcwd()+'/Aligned_Models/' , PCA_directory, scale=2.0)
+# if __name__ == "__main__":
+
+#    main()
+import argparse
+
+
 def main():
     """
     Main function to run PCA decomposition and visualization.
     """
+    parser = argparse.ArgumentParser(description="Run PCA decomposition and visualization on point clouds")
+    parser.add_argument(
+        "--height_path",
+        type=str,
+        default=None,
+        help="Path to the spreadsheet containing height data (optional)"
+    )
+    parser.add_argument(
+        "--scale",
+        type=float,
+        default=2.0,
+        help="Multiplier for standard deviation in mode visualization (default: 2.0)"
+    )
+    
+    args = parser.parse_args()
+    
     subject_list = os.listdir(os.getcwd()+'/results/')
     subject_list = [subject for subject in subject_list if subject != ".DS_Store"]
     PCA_directory = os.path.join(os.getcwd(), 'PCA_results')
     os.makedirs(PCA_directory, exist_ok=True)
-    pca_decomp(subject_list,os.getcwd()+'/Aligned_Models/' , PCA_directory, scale=2.0)
-if __name__ == "__main__":
+    
+    pca_decomp(
+        subject_list,
+        os.getcwd()+'/Aligned_Models/', 
+        PCA_directory, 
+        scale=args.scale,
+        height_file_path=args.height_path
+    )
 
-   main()
+if __name__ == "__main__":
+    main()
