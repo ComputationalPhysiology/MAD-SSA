@@ -1,4 +1,392 @@
 
+# import os
+# import numpy as np
+# import pandas as pd
+# from sklearn.decomposition import PCA
+# from matplotlib import pyplot as plt
+# from mpl_toolkits.mplot3d import Axes3D
+# import plotly.graph_objects as go
+# from plotly.subplots import make_subplots
+# import numpy as np
+# import plotly.graph_objects as go
+
+# def compute_heat_map(deformation):
+#     magnitudes = np.linalg.norm(deformation, axis=1)
+#     return magnitudes
+
+# def plot_heat_map(magnitudes, avg_coords, output_path):
+#     x, y, z = avg_coords[:, 0], avg_coords[:, 1], avg_coords[:, 2]
+#     fig = go.Figure()
+
+#     fig.add_trace(go.Scatter3d(
+#         x=x, y=y, z=z,
+#         mode='markers',
+#         marker=dict(
+#             size=4,
+#             color=magnitudes, 
+#             colorscale='Hot',  
+#             colorbar=dict(title='Deformation Magnitude')
+#         ),
+#         name='Shape Variation Heat Map'
+#     ))
+
+#     # Update layout for better visualization
+#     fig.update_layout(
+#         scene=dict(
+#             xaxis_title='X',
+#             yaxis_title='Y',
+#             zaxis_title='Z',
+#             aspectmode='data'
+#         ),
+#         title="3D Heat Map of Shape Variation",
+#         legend=dict(
+#             x=0.05, y=0.95,
+#             bgcolor='rgba(255,255,255,0.7)',
+#             bordercolor='rgba(0,0,0,0.1)',
+#             borderwidth=1
+#         )
+#     )
+
+#     # Save plot as an HTML file
+#     fig.write_html(output_path)
+#     print(f"Visualization saved to {output_path}")
+
+
+# def compute_deformation_field(avg_coords, mode_vector, std_dev, scale=2.0):
+#     plus_coords = avg_coords + scale * std_dev * mode_vector
+#     minus_coords = avg_coords - scale * std_dev * mode_vector
+
+#     deformation = plus_coords - minus_coords
+#     return deformation
+
+
+
+# def plot_deformation_field(deformation, avg_coords, output_path):
+#     x, y, z = avg_coords[:, 0], avg_coords[:, 1], avg_coords[:, 2]
+#     u, v, w = deformation[:, 0], deformation[:, 1], deformation[:, 2]
+
+#     fig = go.Figure()
+
+#     fig.add_trace(go.Scatter3d(
+#         x=x, y=y, z=z,
+#         mode='markers',
+#         marker=dict(size=3, color='blue', opacity=0.5),
+#         name='Average Coordinates'
+#     ))
+
+#     for xi, yi, zi, ui, vi, wi in zip(x, y, z, u, v, w):
+#         fig.add_trace(go.Scatter3d(
+#             x=[xi, xi + ui], y=[yi, yi + vi], z=[zi, zi + wi],
+#             mode='lines',
+#             line=dict(color='red', width=2),
+#             name='Deformation Vector'
+#         ))
+
+
+#     fig.update_layout(
+#         scene=dict(
+#             xaxis_title='X',
+#             yaxis_title='Y',
+#             zaxis_title='Z',
+#             aspectmode='data'
+#         ),
+#         title="3D Deformation Field Visualization",
+#         legend=dict(
+#             x=0.05, y=0.95,
+#             bgcolor='rgba(255,255,255,0.7)',
+#             bordercolor='rgba(0,0,0,0.1)',
+#             borderwidth=1
+#         )
+#     )
+
+#     fig.write_html(output_path)
+
+
+
+# def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale=2.0):
+
+#     # Scale the mode by its standard deviation
+#     plus_coords = avg_coords + scale * std_dev * mode_vector
+#     minus_coords = avg_coords - scale * std_dev * mode_vector
+    
+#     # # Calculate the overall size of the point cloud in the "+" and "-" directions
+#     var_plus = np.sum(plus_coords.std(axis=0))
+#     var_minus = np.sum(minus_coords.std(axis=0))
+
+#     # # Flip sign if the "-" direction increases the overall size more than the "+" direction
+#     if var_minus > var_plus:
+#         plus_coords, minus_coords = minus_coords, plus_coords
+
+#     # Create subplot
+#     fig = make_subplots(rows=1, cols=3, specs=[[{'type': 'scatter3d'}, {'type': 'scatter3d'}, {'type': 'scatter3d'}]])
+
+
+#     trace1 = go.Scatter3d(x=plus_coords[:, 0], y=plus_coords[:, 1], z=plus_coords[:, 2], mode='markers', 
+#                           marker=dict(size=2, color=plus_coords[:, 2], colorscale='Bluered', opacity=0.8))
+#     fig.add_trace(trace1, row=1, col=1)
+
+#     # Average mode
+#     trace2 = go.Scatter3d(x=avg_coords[:, 0], y=avg_coords[:, 1], z=avg_coords[:, 2], mode='markers',
+#                           marker=dict(size=2, color=avg_coords[:, 2], colorscale='Bluered', opacity=0.8))
+#     fig.add_trace(trace2, row=1, col=2)
+
+#     # "-" mode
+#     trace3 = go.Scatter3d(x=minus_coords[:, 0], y=minus_coords[:, 1], z=minus_coords[:, 2], mode='markers',
+#                           marker=dict(size=2, color=minus_coords[:, 2], colorscale='Bluered', opacity=0.8))
+#     fig.add_trace(trace3, row=1, col=3)
+
+#     # Set the same scale for all the subplots and add titles
+#     fig.update_layout(
+        
+#         annotations=[
+#             dict(text="Mode + (Scaled by STD)", x=0.18, y=0.95, showarrow=False, font=dict(size=14)),
+#             dict(text="Average Mode", x=0.5, y=0.95, showarrow=False, font=dict(size=14)),
+#             dict(text="Mode - (Scaled by STD)", x=0.82, y=0.95, showarrow=False, font=dict(size=14))
+#         ]
+#     )
+
+#     fig.write_html(output_path)
+
+# def visualize_modes_with_vector(avg_coords, mode_vector, std_dev, output_path, scale=2.0):
+
+   
+#     # Compute the coordinates for "+" and "-" modes
+#     plus_coords = avg_coords + scale * std_dev * mode_vector
+#     minus_coords = avg_coords - scale * std_dev * mode_vector
+
+
+#     fig = go.Figure()
+
+#     # "+" Mode trace
+#     fig.add_trace(go.Scatter3d(
+#         x=plus_coords[:, 0], y=plus_coords[:, 1], z=plus_coords[:, 2],
+#         mode='markers',
+#         marker=dict(size=2, color='blue', opacity=0.5),
+#         name='Mode + (Scaled by STD)'
+#     ))
+
+#     # Average Mode trace
+#     fig.add_trace(go.Scatter3d(
+#         x=avg_coords[:, 0], y=avg_coords[:, 1], z=avg_coords[:, 2],
+#         mode='markers',
+#         marker=dict(size=2, color='green', opacity=0.5),
+#         name='Average Mode'
+#     ))
+
+#     # "-" Mode trace
+#     fig.add_trace(go.Scatter3d(
+#         x=minus_coords[:, 0], y=minus_coords[:, 1], z=minus_coords[:, 2],
+#         mode='markers',
+#         marker=dict(size=2, color='red', opacity=0.5),
+#         name='Mode - (Scaled by STD)'
+#     ))
+
+#     fig.update_layout(
+#         scene=dict(
+#             xaxis_title='X',
+#             yaxis_title='Y',
+#             zaxis_title='Z',
+#             aspectmode='data'
+#         ),
+#         title="3D Mode Visualization with Enhanced Variation Vector",
+#         legend=dict(
+#             x=0.05, y=0.95,
+#             bgcolor='rgba(255,255,255,0.7)',
+#             bordercolor='rgba(0,0,0,0.1)',
+#             borderwidth=1
+#         )
+#     )
+
+#     # Save plot as an HTML file
+#     fig.write_html(output_path)
+#     # print(f"Visualization saved to {output_path}")
+
+
+
+# def cumvar_plot(cum_variance, outdir):
+#     """
+#     Plot cumulative variance explained by PCA modes.
+#     """
+#     plt.plot(np.arange(1, len(cum_variance) + 1), cum_variance, "-o", linewidth=2)
+#     plt.xlabel("Number of Modes")
+#     plt.ylim(0, 1)
+#     plt.ylabel("Cumulative Variance (%)")
+#     plt.grid()
+#     plt.savefig(os.path.join(outdir, "cumulative_variance.png"))
+
+# def get_patient_height(patient_number, height_file_path=None):
+#     """
+#     Get the height of a patient from a spreadsheet if available, otherwise return 1.
+    
+#     Args:
+#         patient_number: The patient number to look up.
+#         height_file_path: Path to the spreadsheet containing height data (optional).
+    
+#     Returns:
+#         The height of the patient or 1 if no data is available.
+#     """
+#     if height_file_path and os.path.exists(height_file_path):
+#         try:
+#             df = pd.read_excel(height_file_path)
+#             if patient_number in df['Pat_no'].values:
+#                 patient_height = df.loc[df['Pat_no'] == patient_number, 'Height'].values[0]
+#                 if not pd.isna(patient_height):
+#                     return patient_height
+#             # If height is NaN or not found, return the median height
+#             return np.median(df['Height'].dropna().values)
+#         except Exception as e:
+#             print(f"Error reading height file: {e}")
+#             return 1
+#     else:
+#         # Default height if no file is provided or file doesn't exist
+#         return 1
+
+
+
+# def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
+#     """
+#     Perform PCA decomposition on aligned point clouds and visualize modes.
+
+#     Args:
+#         cases: List of case identifiers.
+#         input_dir: Directory containing aligned point cloud files.
+#         output_dir: Directory to save PCA results and visualizations.
+#         scale: Multiplier for standard deviation in mode visualization.
+#         height_file_path: Path to the spreadsheet containing height data (optional).
+#     """
+#     outdir_modes = os.path.join(output_dir, "modes")
+#     os.makedirs(outdir_modes, exist_ok=True)
+
+#     point_coords = []
+#     for case in cases:
+#         print(f"Processing case {case}")
+#         file_path = os.path.join(input_dir, f"{case}_merged_points.txt")
+#         try:
+#             point_cloud = np.loadtxt(file_path, delimiter=",")
+#             height = get_patient_height(int(case), height_file_path)
+#             point_coords.append(point_cloud / height)
+#         except Exception as e:
+#             print(f"Skipping case {case} due to error: {e}")
+#             continue
+
+#     if not point_coords:
+#         print("No valid point clouds found. Exiting...")
+#         return
+#     point_coords = np.array(point_coords)
+#     cshape = point_coords.shape
+#     X = point_coords.reshape((cshape[0], cshape[1] * cshape[2]), order="C")
+#     avg_coords = np.mean(point_coords, axis=0)
+
+#     # PCA decomposition
+#     pca = PCA(svd_solver="full")
+#     pca.fit(X)
+
+   
+#     scores = pca.transform(X)
+  
+#     std_devs = scores.std(axis=0)
+
+#     # Save scores
+#     scores_df = pd.DataFrame(scores, columns=[f"M{i}" for i in range(1, X.shape[0] + 1)])
+#     scores_df.index = cases
+#     scores_df.index.rename("Pat_no", inplace=True)
+#     scores_df.to_csv(os.path.join(output_dir, "pca_scores.csv"))
+
+#     # Save variance ratios
+#     cum_variance = np.cumsum(pca.explained_variance_ratio_)
+#     cumvar_plot(cum_variance, output_dir)
+#     var_ratios_df = pd.DataFrame(
+#         pca.explained_variance_ratio_,
+#         index=[f"M{i}" for i in range(1, X.shape[0] + 1)],
+#         columns=["Variance Ratio"],
+#     )
+#     var_ratios_df.index.rename("Mode", inplace=True)
+#     var_ratios_df.to_csv(os.path.join(output_dir, "pca_variance_ratios.csv"))
+#     outdir_point_clouds = os.path.join(output_dir, "point_clouds")
+#     os.makedirs(outdir_point_clouds, exist_ok=True)
+
+#     avg_coords_path = os.path.join(outdir_point_clouds, "avg_coords.txt")
+#     np.savetxt(avg_coords_path, avg_coords, delimiter=",")
+#     print(f"Average coordinates saved to {avg_coords_path}")
+#     # Visualize PCA Modes
+    
+#     for i, (mode, std_dev) in enumerate(zip(pca.components_[:10], std_devs), start=1):  # First 10 modes
+#         mode_coords = mode.reshape(cshape[1], cshape[2], order="C")
+#         output_path = os.path.join(outdir_modes, f"mode_{i}.html")
+#         output_path2 = os.path.join(outdir_modes, f"mode_{i}_comparison.html")
+#         output_path3 = os.path.join(outdir_modes, f"mode_{i}_deformation.html")
+#         output_path4 = os.path.join(outdir_modes, f"mode_{i}_heat_map.html")
+
+
+#         plus_coords = avg_coords + scale * std_dev * mode_coords
+#         minus_coords = avg_coords - scale * std_dev * mode_coords
+
+#         # Save point clouds
+#         plus_path = os.path.join(outdir_point_clouds, f"mode_{i}_plus_coords.txt")
+#         minus_path = os.path.join(outdir_point_clouds, f"mode_{i}_minus_coords.txt")
+#         np.savetxt(plus_path, plus_coords, delimiter=",")
+#         np.savetxt(minus_path, minus_coords, delimiter=",")
+#         print(f"Mode {i}: plus_coords saved to {plus_path}, minus_coords saved to {minus_path}")
+
+#         visualize_mode_with_std(mode_coords, avg_coords, std_dev, output_path, scale)
+#         visualize_modes_with_vector(avg_coords, mode_coords, std_dev, output_path2, scale)
+#         ##### For more advanced visualization, uncomment the following lines #######
+#         # deformation = compute_deformation_field(avg_coords, mode_coords, std_dev)
+#         # plot_deformation_field(deformation, avg_coords, output_path3)
+#         # magnitudes = compute_heat_map(deformation)
+
+#         # plot_heat_map(magnitudes, avg_coords, output_path4)
+# # def main():
+# #     """
+# #     Main function to run PCA decomposition and visualization.
+# #     """
+# #     subject_list = os.listdir(os.getcwd()+'/results/')
+# #     subject_list = [subject for subject in subject_list if subject != ".DS_Store"]
+# #     PCA_directory = os.path.join(os.getcwd(), 'PCA_results')
+# #     os.makedirs(PCA_directory, exist_ok=True)
+# #     pca_decomp(subject_list,os.getcwd()+'/Aligned_Models/' , PCA_directory, scale=2.0)
+# # if __name__ == "__main__":
+
+# #    main()
+# import argparse
+
+
+# def main():
+#     """
+#     Main function to run PCA decomposition and visualization.
+#     """
+#     parser = argparse.ArgumentParser(description="Run PCA decomposition and visualization on point clouds")
+#     parser.add_argument(
+#         "--height_path",
+#         type=str,
+#         default=None,
+#         help="Path to the spreadsheet containing height data (optional)"
+#     )
+#     parser.add_argument(
+#         "--scale",
+#         type=float,
+#         default=2.0,
+#         help="Multiplier for standard deviation in mode visualization (default: 2.0)"
+#     )
+    
+#     args = parser.parse_args()
+    
+#     subject_list = os.listdir(os.getcwd()+'/results/')
+#     subject_list = [subject for subject in subject_list if subject != ".DS_Store"]
+#     PCA_directory = os.path.join(os.getcwd(), 'PCA_results')
+#     os.makedirs(PCA_directory, exist_ok=True)
+    
+#     pca_decomp(
+#         subject_list,
+#         os.getcwd()+'/Aligned_Models/', 
+#         PCA_directory, 
+#         scale=args.scale,
+#         height_file_path=args.height_path
+#     )
+
+# if __name__ == "__main__":
+#     main()
+
 import os
 import numpy as np
 import pandas as pd
@@ -7,8 +395,7 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import numpy as np
-import plotly.graph_objects as go
+import argparse
 
 def compute_heat_map(deformation):
     magnitudes = np.linalg.norm(deformation, axis=1)
@@ -60,7 +447,6 @@ def compute_deformation_field(avg_coords, mode_vector, std_dev, scale=2.0):
     return deformation
 
 
-
 def plot_deformation_field(deformation, avg_coords, output_path):
     x, y, z = avg_coords[:, 0], avg_coords[:, 1], avg_coords[:, 2]
     u, v, w = deformation[:, 0], deformation[:, 1], deformation[:, 2]
@@ -82,7 +468,6 @@ def plot_deformation_field(deformation, avg_coords, output_path):
             name='Deformation Vector'
         ))
 
-
     fig.update_layout(
         scene=dict(
             xaxis_title='X',
@@ -102,7 +487,6 @@ def plot_deformation_field(deformation, avg_coords, output_path):
     fig.write_html(output_path)
 
 
-
 def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale=2.0):
 
     # Scale the mode by its standard deviation
@@ -120,7 +504,6 @@ def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale
     # Create subplot
     fig = make_subplots(rows=1, cols=3, specs=[[{'type': 'scatter3d'}, {'type': 'scatter3d'}, {'type': 'scatter3d'}]])
 
-
     trace1 = go.Scatter3d(x=plus_coords[:, 0], y=plus_coords[:, 1], z=plus_coords[:, 2], mode='markers', 
                           marker=dict(size=2, color=plus_coords[:, 2], colorscale='Bluered', opacity=0.8))
     fig.add_trace(trace1, row=1, col=1)
@@ -137,7 +520,6 @@ def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale
 
     # Set the same scale for all the subplots and add titles
     fig.update_layout(
-        
         annotations=[
             dict(text="Mode + (Scaled by STD)", x=0.18, y=0.95, showarrow=False, font=dict(size=14)),
             dict(text="Average Mode", x=0.5, y=0.95, showarrow=False, font=dict(size=14)),
@@ -149,11 +531,9 @@ def visualize_mode_with_std(mode_vector, avg_coords, std_dev, output_path, scale
 
 def visualize_modes_with_vector(avg_coords, mode_vector, std_dev, output_path, scale=2.0):
 
-   
     # Compute the coordinates for "+" and "-" modes
     plus_coords = avg_coords + scale * std_dev * mode_vector
     minus_coords = avg_coords - scale * std_dev * mode_vector
-
 
     fig = go.Figure()
 
@@ -199,8 +579,6 @@ def visualize_modes_with_vector(avg_coords, mode_vector, std_dev, output_path, s
 
     # Save plot as an HTML file
     fig.write_html(output_path)
-    # print(f"Visualization saved to {output_path}")
-
 
 
 def cumvar_plot(cum_variance, outdir):
@@ -242,8 +620,7 @@ def get_patient_height(patient_number, height_file_path=None):
         return 1
 
 
-
-def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
+def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None, scale_range=None):
     """
     Perform PCA decomposition on aligned point clouds and visualize modes.
 
@@ -253,6 +630,7 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
         output_dir: Directory to save PCA results and visualizations.
         scale: Multiplier for standard deviation in mode visualization.
         height_file_path: Path to the spreadsheet containing height data (optional).
+        scale_range: Tuple (min_scale, max_scale, num_steps) for generating multiple scales.
     """
     outdir_modes = os.path.join(output_dir, "modes")
     os.makedirs(outdir_modes, exist_ok=True)
@@ -281,9 +659,7 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
     pca = PCA(svd_solver="full")
     pca.fit(X)
 
-   
     scores = pca.transform(X)
-  
     std_devs = scores.std(axis=0)
 
     # Save scores
@@ -302,20 +678,28 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
     )
     var_ratios_df.index.rename("Mode", inplace=True)
     var_ratios_df.to_csv(os.path.join(output_dir, "pca_variance_ratios.csv"))
+    
     outdir_point_clouds = os.path.join(output_dir, "point_clouds")
     os.makedirs(outdir_point_clouds, exist_ok=True)
 
     avg_coords_path = os.path.join(outdir_point_clouds, "avg_coords.txt")
     np.savetxt(avg_coords_path, avg_coords, delimiter=",")
     print(f"Average coordinates saved to {avg_coords_path}")
+
+    # Generate scale values if range is provided
+    if scale_range:
+        min_scale, max_scale, num_steps = scale_range
+        scale_values = np.linspace(min_scale, max_scale, num_steps)
+        outdir_scales = os.path.join(output_dir, "scale_series")
+        os.makedirs(outdir_scales, exist_ok=True)
+
     # Visualize PCA Modes
-    for i, (mode, std_dev) in enumerate(zip(pca.components_[:10], std_devs), start=1):  # First 10 modes
+    for i, (mode, std_dev) in enumerate(zip(pca.components_[:10], std_devs), start=1):
         mode_coords = mode.reshape(cshape[1], cshape[2], order="C")
         output_path = os.path.join(outdir_modes, f"mode_{i}.html")
         output_path2 = os.path.join(outdir_modes, f"mode_{i}_comparison.html")
         output_path3 = os.path.join(outdir_modes, f"mode_{i}_deformation.html")
         output_path4 = os.path.join(outdir_modes, f"mode_{i}_heat_map.html")
-
 
         plus_coords = avg_coords + scale * std_dev * mode_coords
         minus_coords = avg_coords - scale * std_dev * mode_coords
@@ -327,27 +711,26 @@ def pca_decomp(cases, input_dir, output_dir, scale=2.0, height_file_path=None):
         np.savetxt(minus_path, minus_coords, delimiter=",")
         print(f"Mode {i}: plus_coords saved to {plus_path}, minus_coords saved to {minus_path}")
 
+        # Save scale series if requested
+        if scale_range:
+            mode_scale_data = {}
+            for scale_val in scale_values:
+                coords = avg_coords + scale_val * std_dev * mode_coords
+                mode_scale_data[f"scale_{scale_val:.1f}"] = coords
+            
+            # Save all scales for this mode
+            scale_file = os.path.join(outdir_scales, f"mode_{i}_scales.npz")
+            np.savez(scale_file, **mode_scale_data, scale_values=scale_values, avg_coords=avg_coords)
+            print(f"Mode {i}: Scale series saved to {scale_file}")
+
         visualize_mode_with_std(mode_coords, avg_coords, std_dev, output_path, scale)
         visualize_modes_with_vector(avg_coords, mode_coords, std_dev, output_path2, scale)
+        
         ##### For more advanced visualization, uncomment the following lines #######
         # deformation = compute_deformation_field(avg_coords, mode_coords, std_dev)
         # plot_deformation_field(deformation, avg_coords, output_path3)
         # magnitudes = compute_heat_map(deformation)
-
         # plot_heat_map(magnitudes, avg_coords, output_path4)
-# def main():
-#     """
-#     Main function to run PCA decomposition and visualization.
-#     """
-#     subject_list = os.listdir(os.getcwd()+'/results/')
-#     subject_list = [subject for subject in subject_list if subject != ".DS_Store"]
-#     PCA_directory = os.path.join(os.getcwd(), 'PCA_results')
-#     os.makedirs(PCA_directory, exist_ok=True)
-#     pca_decomp(subject_list,os.getcwd()+'/Aligned_Models/' , PCA_directory, scale=2.0)
-# if __name__ == "__main__":
-
-#    main()
-import argparse
 
 
 def main():
@@ -355,33 +738,25 @@ def main():
     Main function to run PCA decomposition and visualization.
     """
     parser = argparse.ArgumentParser(description="Run PCA decomposition and visualization on point clouds")
-    parser.add_argument(
-        "--height_path",
-        type=str,
-        default=None,
-        help="Path to the spreadsheet containing height data (optional)"
-    )
-    parser.add_argument(
-        "--scale",
-        type=float,
-        default=2.0,
-        help="Multiplier for standard deviation in mode visualization (default: 2.0)"
-    )
+    parser.add_argument("--height_path", type=str, default=None,
+                       help="Path to the spreadsheet containing height data (optional)")
+    parser.add_argument("--scale", type=float, default=2.0,
+                       help="Multiplier for standard deviation in mode visualization (default: 2.0)")
+    parser.add_argument("--save_scales", action="store_true",
+                       help="Save coordinates across scale range -3 to 3")
+    parser.add_argument("--scale_steps", type=int, default=13,
+                       help="Number of scale steps (default: 13)")
     
     args = parser.parse_args()
     
-    subject_list = os.listdir(os.getcwd()+'/results/')
-    subject_list = [subject for subject in subject_list if subject != ".DS_Store"]
+    subject_list = [s for s in os.listdir(os.getcwd()+'/results/') if s != ".DS_Store"]
     PCA_directory = os.path.join(os.getcwd(), 'PCA_results')
     os.makedirs(PCA_directory, exist_ok=True)
     
-    pca_decomp(
-        subject_list,
-        os.getcwd()+'/Aligned_Models/', 
-        PCA_directory, 
-        scale=args.scale,
-        height_file_path=args.height_path
-    )
+    scale_range = (-3.0, 3.0, args.scale_steps) if args.save_scales else None
+    
+    pca_decomp(subject_list, os.getcwd()+'/Aligned_Models/', PCA_directory, 
+               scale=args.scale, height_file_path=args.height_path, scale_range=scale_range)
 
 if __name__ == "__main__":
     main()
