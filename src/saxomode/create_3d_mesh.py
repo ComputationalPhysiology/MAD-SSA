@@ -145,6 +145,21 @@ def main(args=None) -> int:
         type=str,
         help="The result folder name that would be created in the directory of the sample.",
     )
+    parser.add_argument(
+        "--k_apex_epi",
+        nargs="+",
+        type=int,
+        default=[10, 15, 15, 15, 15, 15, 15, 15, 15, 10],
+        help="List of k_apex values for epi (default: [10, 15, 15, 15, 15, 15, 15, 15, 15, 10])"
+    )
+    
+    parser.add_argument(
+        "--k_apex_endo",
+        nargs="+",
+        type=int,
+        default=[18, 18, 18, 18, 18, 18, 18, 18, 18, 10],
+        help="List of k_apex values for endo (default: [18, 18, 18, 18, 18, 18, 18, 18, 18, 10])"
+    )
     args = parser.parse_args(args)
 
     sample_name = args.name
@@ -159,9 +174,10 @@ def main(args=None) -> int:
     SurfaceMeshSizeEpi = args.SurfaceMeshSizeEpi
     VolumeMeshSizeMin = args.VolumeMeshSizeMin
     VolumeMeshSizeMax = args.VolumeMeshSizeMax
-
-    k_apex_epi_list = [10, 15, 15, 15, 15, 15, 15, 15, 15, 10]
-    k_apex_endo_list = [18, 18, 18, 18, 18, 18, 18, 18, 18, 10]
+    k_apex_epi_list = args.k_apex_epi
+    k_apex_endo_list = args.k_apex_endo
+    # k_apex_epi_list = [10, 15, 15, 15, 15, 15, 15, 15, 15, 10]
+    # k_apex_endo_list = [18, 18, 18, 18, 18, 18, 18, 18, 18, 10]
 
     if mode_flag:
         sample_directory = data_directory / mode_folder
